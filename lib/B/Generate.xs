@@ -118,7 +118,13 @@ find_cv_by_root(OP* o) {
     /* Special case, this is the main root */
     cached = hv_store_ent(root_cache, key, newRV((SV*)PL_main_cv), 0);
   } else if(PL_eval_root == root && PL_compcv) { 
-    return newRV(PL_compcv);
+    SV* tmpcv = (CV*)NEWSV(1104,0);
+    sv_upgrade((SV *)tmpcv, SVt_PVCV);
+     CvPADLIST(tmpcv) = CvPADLIST(PL_compcv);
+     SvREFCNT_inc(CvPADLIST(tmpcv));
+     CvROOT(tmpcv) = root;
+     OpREFCNT_inc(root);
+     cached = hv_store_ent(root_cache, key, newRV((SV*)tmpcv), 0);
   } else {
     /* Need to walk the symbol table, yay */
     CV* cv = 0;

@@ -1,5 +1,9 @@
 Revision history for Perl extension B::Generate.
 
+0.03  Wed Jan 10 00:21:08 2001
+    - Test script needed a fix to stop ->targ pointing into never-never
+      land. Not *exactly* sure why.
+
 0.02  Fri Jan  5 13:14:29 2001
     - Added a couple more methods and tests, mainly SVOP and SV methods.
 

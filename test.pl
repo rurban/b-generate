@@ -1,4 +1,4 @@
-BEGIN { $| = 1; print "1..2\n"; }
+BEGIN { $| = 1; print "1..3\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use B::Generate;
 $loaded = 1;
@@ -24,6 +24,8 @@ CHECK{
     $x->sv(13);
 
 } 
+
+my $b; # STAY STILL!
 
 $a = 17; $b = 15; print "ok ", $a + $b, "\n";
 $c = 30; $d = 10; print "ok ", $c - $d, "\n";

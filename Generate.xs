@@ -90,6 +90,7 @@ make_sv_object(pTHX_ SV *arg, SV *sv)
 static I32
 op_name_to_num(SV * name)
 {
+    dTHX;
     char *s;
     int i =0;
     if (SvIOK(name) && SvIV(name) >= 0 && SvIV(name) < OP_max)
@@ -218,6 +219,7 @@ cc_opclassname(pTHX_ OP *o)
 
 static OP * 
 SVtoO(SV* sv) {
+    dTHX;
     if (SvROK(sv)) {
         IV tmp = SvIV((SV*)SvRV(sv));
         return INT2PTR(OP*,tmp);
@@ -427,6 +429,17 @@ OP_newstate(class, flags, label, oldo)
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::LISTOP"), PTR2IV(o));
 
+B::OP
+OP_append_elem(class, type, first, last)
+    SV* class
+    I32 type
+    B::OP first
+    B::OP last
+    CODE:
+        RETVAL = append_elem(aTHX_ type, first, last);
+    OUTPUT:
+        RETVAL
+
 MODULE = B::Generate	PACKAGE = B::UNOP		PREFIX = UNOP_
 
 B::OP 
@@ -532,77 +545,7 @@ BINOP_new(class, type, flags, sv_first, sv_last)
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::BINOP"), PTR2IV(o));
 
-MODULE = B::Generate	PACKAGE = B::LOGOP		PREFIX = LOGOP_
-
-B::OP
-LOGOP_other(o,...)
-	B::LOGOP	o
-    CODE:
-        if (items > 1)
-            o->op_other = SVtoO(ST(1));
-        RETVAL = o->op_other;
-    OUTPUT:
-        RETVAL
-
-void
-LOGOP_new(class, type, flags, sv_first, sv_other)
-    SV * class
-    SV * type
-    I32 flags
-    SV * sv_first
-    SV * sv_other
-    OP *first = NO_INIT
-    OP *other = NO_INIT
-    OP *o = NO_INIT
-    CODE:
-        if (SvROK(sv_first)) {
-            if (!sv_derived_from(sv_first, "B::OP"))
-                Perl_croak(aTHX_ "Reference 'first' was not a B::OP object");
-            else {
-                IV tmp = SvIV((SV*)SvRV(sv_first));
-                first = INT2PTR(OP*, tmp);
-            }
-        } else if (SvTRUE(sv_first))
-            Perl_croak(aTHX_ 
-            "'first' argument to B::UNOP->new should be a B::OP object or a false value");
-        else
-            first = Nullop;
-
-        if (SvROK(sv_other)) {
-            if (!sv_derived_from(sv_other, "B::OP"))
-                Perl_croak(aTHX_ "Reference 'other' was not a B::OP object");
-            else {
-                IV tmp = SvIV((SV*)SvRV(sv_other));
-                other = INT2PTR(OP*, tmp);
-            }
-        } else if (SvTRUE(sv_other))
-            Perl_croak(aTHX_ 
-            "'other' argument to B::BINOP->new should be a B::OP object or a false value");
-        else
-            other = Nullop;
-
-        {
-        SV**sparepad = PL_curpad;
-        OP *saveop = PL_op;
-        PL_curpad = AvARRAY(PL_comppad);
-        o = newBINOP(op_name_to_num(type), flags, first, other);
-        PL_curpad = sparepad;
-        PL_op = saveop;
-        }
-	    ST(0) = sv_newmortal();
-        sv_setiv(newSVrv(ST(0), "B::LOGOP"), PTR2IV(o));
-
 MODULE = B::Generate	PACKAGE = B::LISTOP		PREFIX = LISTOP_
-
-U32
-LISTOP_children(o, ...)
-	B::LISTOP	o
-    CODE:
-        if (items > 1)
-            o->op_children = (U32)SvIV(ST(1));
-        RETVAL = o->op_children;
-    OUTPUT:
-        RETVAL
 
 void
 LISTOP_new(class, type, flags, sv_first, sv_last)
@@ -645,7 +588,7 @@ LISTOP_new(class, type, flags, sv_first, sv_last)
         SV**sparepad = PL_curpad;
         OP* saveop   = PL_op;
         PL_curpad = AvARRAY(PL_comppad);
-        o = newBINOP(op_name_to_num(type), flags, first, last);
+        o = newLISTOP(op_name_to_num(type), flags, first, last);
         PL_curpad = sparepad;
         PL_op = saveop;
         }
@@ -653,6 +596,64 @@ LISTOP_new(class, type, flags, sv_first, sv_last)
         sv_setiv(newSVrv(ST(0), "B::LISTOP"), PTR2IV(o));
 
 MODULE = B::Generate	PACKAGE = B::LOGOP		PREFIX = LOGOP_
+
+void
+LOGOP_new(class, type, flags, sv_first, sv_last)
+    SV * class
+    SV * type
+    I32 flags
+    SV * sv_first
+    SV * sv_last
+    OP *first = NO_INIT
+    OP *last = NO_INIT
+    OP *o = NO_INIT
+    CODE:
+        if (SvROK(sv_first)) {
+            if (!sv_derived_from(sv_first, "B::OP"))
+                Perl_croak(aTHX_ "Reference 'first' was not a B::OP object");
+            else {
+                IV tmp = SvIV((SV*)SvRV(sv_first));
+                first = INT2PTR(OP*, tmp);
+            }
+        } else if (SvTRUE(sv_first))
+            Perl_croak(aTHX_ 
+            "'first' argument to B::UNOP->new should be a B::OP object or a false value");
+        else
+            first = Nullop;
+
+        if (SvROK(sv_last)) {
+            if (!sv_derived_from(sv_last, "B::OP"))
+                Perl_croak(aTHX_ "Reference 'last' was not a B::OP object");
+            else {
+                IV tmp = SvIV((SV*)SvRV(sv_last));
+                last = INT2PTR(OP*, tmp);
+            }
+        } else if (SvTRUE(sv_last))
+            Perl_croak(aTHX_ 
+            "'last' argument to B::BINOP->new should be a B::OP object or a false value");
+        else
+            last = Nullop;
+
+        {
+        SV**sparepad = PL_curpad;
+        OP* saveop   = PL_op;
+        PL_curpad = AvARRAY(PL_comppad);
+        o = newLOGOP(op_name_to_num(type), flags, first, last);
+        PL_curpad = sparepad;
+        PL_op = saveop;
+        }
+	    ST(0) = sv_newmortal();
+        sv_setiv(newSVrv(ST(0), "B::LOGOP"), PTR2IV(o));
+
+B::OP
+LOGOP_other(o,...)
+	B::LOGOP	o
+    CODE:
+        if (items > 1)
+            o->op_other = SVtoO(ST(1));
+        RETVAL = o->op_other;
+    OUTPUT:
+        RETVAL
 
 #define PMOP_pmreplroot(o)	o->op_pmreplroot
 #define PMOP_pmnext(o)		o->op_pmnext

@@ -1,5 +1,17 @@
 Revision history for Perl extension B::Generate.
 
+0.06  Mon May 28 18:08:12 BST 2001
+    - Backed out disastrous context compilation fix
+    - Fixed B::LOGOP->new and B::LISTOP->new - it was creating binops and 
+      blessing them as B::BINOP. Oops!
+    - Added the undocumented "append_elem" method; this is enough for
+      you to create subroutine calls if you know how. I should probably
+      make a "gimme a sub call" utility function.
+
+0.05  Wed Apr 18 08:50:33 2001
+    - The bastards took op_children away!
+    - Fixed interpret context compilation bug
+
 0.04  Wed Mar 21 00:18:27 2001
     - Urgh. Fixed *nasty* segfault bug. (PL_op==0x0 after ->new)
     - Added "linklist" and undocumented "clean" method

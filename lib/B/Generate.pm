@@ -9,7 +9,7 @@ require DynaLoader;
 
 our @ISA = qw(DynaLoader);
 
-our $VERSION = '1.01';
+our $VERSION = '1.03';
 
 {
 no warnings;

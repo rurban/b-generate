@@ -67,6 +67,92 @@ static int walkoptree_debug = 0;	/* Flag for walkoptree debug hook */
 
 static SV *specialsv_list[6];
 
+SV** my_current_pad;
+SV** tmp_pad;
+
+HV* root_cache;
+
+#define GEN_PAD      { set_active_sub(find_cv_by_root((OP*)o));tmp_pad = PL_curpad;PL_curpad = my_current_pad; }
+#define OLD_PAD      (PL_curpad = tmp_pad)
+//#define GEN_PAD
+//#define OLD_PAD
+
+void
+set_active_sub(SV *sv)
+{
+	AV* padlist; 
+	SV** svp;
+	padlist = CvPADLIST(SvRV(sv));
+	if(!padlist) {
+		dTHX;
+		sv_dump(sv);
+		sv_dump(padlist);
+	}
+	svp = AvARRAY(padlist);
+	my_current_pad = AvARRAY((AV*)svp[1]);
+}
+
+static SV *
+find_cv_by_root(OP* o) {
+  dTHX;
+  OP* root = o;
+  SV* key;
+  SV* val;
+  HE* cached;
+
+  if(!root_cache)
+    root_cache = newHV();
+
+  while(root->op_next)
+    root = root->op_next;
+
+  key = newSViv(PTR2IV(root));
+  
+  cached = hv_fetch_ent(root_cache, key, 0, 0);
+  if(cached) {
+    return HeVAL(cached);
+  }
+  
+
+  if(PL_main_root == root) {
+    /* Special case, this is the main root */
+    cached = hv_store_ent(root_cache, key, newRV((SV*)PL_main_cv), 0);
+  } else {
+    /* Need to walk the symbol table, yay */
+    CV* cv = 0;
+    SV* sva;
+    SV* sv;
+    register SV* svend;
+
+    for (sva = PL_sv_arenaroot; sva; sva = (SV*)SvANY(sva)) {
+      svend = &sva[SvREFCNT(sva)];
+      for (sv = sva + 1; sv < svend; ++sv) {
+	if (SvTYPE(sv) != SVTYPEMASK && SvREFCNT(sv)) {
+	  if(SvTYPE(sv) == SVt_PVCV &&
+	     CvROOT(sv) == root
+	     ) {
+	    cv = (CV*) sv;
+	  } else if(SvTYPE(sv) == SVt_PVGV && GvGP(sv) &&
+		    GvCV(sv) && !CvXSUB(GvCV(sv)) &&
+		    CvROOT(GvCV(sv)) == root)
+		     {
+      	    cv = (CV*) GvCV(sv);
+	  }
+	}
+      }
+    }
+
+    if(!cv) {
+      Perl_die(aTHX_ "I am sorry but we couldn't find this root!\n");
+    }
+
+    cached = hv_store_ent(root_cache, key, newRV((SV*)cv), 0);
+  }
+
+  return (SV*) HeVAL(cached);
+}
+
+
 static SV *
 make_sv_object(pTHX_ SV *arg, SV *sv)
 {
@@ -129,6 +215,7 @@ op_name_to_num(SV * name)
 static void* 
 custom_op_ppaddr(char *name)
 {
+    dTHX;
     HE *ent;
     SV *value;
     if (!PL_custom_op_names)
@@ -265,17 +352,26 @@ SVtoO(SV* sv) {
         IV tmp = SvIV((SV*)SvRV(sv));
         return INT2PTR(OP*,tmp);
     }
-    else
+    else {
+        return 0;
+    }
         croak("Argument is not a reference");
     return 0; /* Not reached */
 }
 
 /* Pre-5.7 compatibility */
-#ifndef op_null
+#ifndef op_clear
 void op_clear(OP* o) {
     /* Fake it, I'm bored */
-    // croak("This operation requires a newer version of Perl");
+    croak("This operation requires a newer version of Perl");
 }
+#endif
+#ifndef op_null
+#define op_null    croak("This operation requires a newer version of Perl");
+#endif
+
+#ifndef PM_GETRE
+#define PM_GETRE(o)     ((o)->op_pmregexp)
 #endif
 
 typedef OP	*B__OP;
@@ -338,6 +434,14 @@ B_main_start(...)
 #define OP_desc(o)	PL_op_desc[o->op_type]
 
 MODULE = B::Generate	PACKAGE = B::OP		PREFIX = OP_
+
+B::CV
+OP_find_cv(o)
+	B::OP	o
+    CODE:
+	RETVAL = SvRV(find_cv_by_root((OP*)o));
+    OUTPUT:
+	RETVAL
 
 B::OP
 OP_next(o, ...)
@@ -448,16 +552,16 @@ OP_new(class, type, flags)
     OP *saveop = NO_INIT
     I32 typenum = NO_INIT
     CODE:
-        sparepad = PL_curpad;
+//        sparepad = PL_curpad;
         saveop = PL_op;
-        PL_curpad = AvARRAY(PL_comppad);
+//        PL_curpad = AvARRAY(PL_comppad);
         typenum = op_name_to_num(type);
         o = newOP(typenum, flags);
 #ifdef PERL_CUSTOM_OPCODES
         if (typenum == OP_CUSTOM)
             o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
 #endif
-        PL_curpad = sparepad;
+	    //        PL_curpad = sparepad;
         PL_op = saveop;
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::OP"), PTR2IV(o));
@@ -556,10 +660,11 @@ UNOP_new(class, type, flags, sv_first)
             "'first' argument to B::UNOP->new should be a B::OP object or a false value");
         else
             first = Nullop;
-
         {
+        I32 padflag = 0;
         SV**sparepad = PL_curpad;
-        OP* saveop = PL_op;
+        OP* saveop = PL_op; 
+
         PL_curpad = AvARRAY(PL_comppad);
         typenum = op_name_to_num(type);
         o = newUNOP(typenum, flags, first);
@@ -574,6 +679,12 @@ UNOP_new(class, type, flags, sv_first)
         sv_setiv(newSVrv(ST(0), "B::UNOP"), PTR2IV(o));
 
 MODULE = B::Generate	PACKAGE = B::BINOP		PREFIX = BINOP_
+
+void
+BINOP_null(o)
+	B::BINOP	o
+	CODE:
+		op_null((OP*)o);
 
 B::OP
 BINOP_last(o,...)
@@ -887,12 +998,12 @@ PMOP_precomp(o)
 	REGEXP *	rx = NO_INIT
     CODE:
 	ST(0) = sv_newmortal();
-	rx = o->op_pmregexp;
+	rx = PM_GETRE(o);
 	if (rx)
 	    sv_setpvn(ST(0), rx->precomp, rx->prelen);
 
-#define SVOP_sv(o)     cSVOPo->op_sv
-#define SVOP_gv(o)     ((GV*)cSVOPo->op_sv)
+#define SVOP_sv(o)     (cSVOPo_sv)
+#define SVOP_gv(o)     ((GV*)cSVOPo_sv)
 
 MODULE = B::Generate	PACKAGE = B::SVOP		PREFIX = SVOP_
 
@@ -900,9 +1011,11 @@ B::SV
 SVOP_sv(o, ...)
 	B::SVOP	o
     CODE:
+        GEN_PAD;
         if (items > 1)
-            cSVOPo->op_sv = newSVsv(ST(1));
-        RETVAL = cSVOPo->op_sv;
+            cSVOPo_sv = newSVsv(ST(1));
+        RETVAL = cSVOPo_sv;
+        OLD_PAD;
     OUTPUT:
         RETVAL
 
@@ -922,8 +1035,8 @@ SVOP_new(class, type, flags, sv)
     SV* param = NO_INIT
     I32 typenum = NO_INIT
     CODE:
-        sparepad = PL_curpad;
-        PL_curpad = AvARRAY(PL_comppad);
+	//    sparepad = PL_curpad;
+        //PL_curpad = AvARRAY(PL_comppad);
         saveop = PL_op;
         typenum = op_name_to_num(type); /* XXX More classes here! */
         if (typenum == OP_GVSV) {
@@ -939,7 +1052,7 @@ SVOP_new(class, type, flags, sv)
         if (typenum == OP_CUSTOM)
             o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
 #endif
-        PL_curpad = sparepad;
+	    //PL_curpad = sparepad;
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::SVOP"), PTR2IV(o));
         PL_op = saveop;
@@ -1019,6 +1132,7 @@ LOOP_lastop(o, ...)
 #define COP_warnings(o)	o->cop_warnings
 
 MODULE = B::Generate	PACKAGE = B::COP		PREFIX = COP_
+
 
 char *
 COP_label(o)
@@ -1113,6 +1227,17 @@ SvFLAGS(sv, ...)
 
 MODULE = B::Generate	PACKAGE = B::CV		PREFIX = CV_
 
+B::OP
+CV_ROOT(cv)
+        B::CV   cv
+	CODE:
+	if(cv == PL_main_cv) {
+	RETVAL = PL_main_root;
+	} else {
+	RETVAL = CvROOT(cv);
+	}
+	OUTPUT:
+	RETVAL
 
 B::CV
 CV_newsub_simple(class, name, block)
@@ -1123,10 +1248,14 @@ CV_newsub_simple(class, name, block)
     OP* o = NO_INIT
 
     CODE:
-        o = newSVOP(aTHX_ OP_CONST, 0, name);
+        o = newSVOP(OP_CONST, 0, name);
         mycv = newSUB(start_subparse(FALSE, 0), o, Nullop, block);
         /*op_free(o); */
         RETVAL = mycv;
     OUTPUT:
         RETVAL
         
+
+
+
+

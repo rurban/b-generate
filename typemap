@@ -67,3 +67,5 @@ T_SV_OBJ
 
 T_MG_OBJ
 	sv_setiv(newSVrv($arg, "B::MAGIC"), PTR2IV($var));
+
+

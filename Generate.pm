@@ -9,7 +9,7 @@ require DynaLoader;
 
 our @ISA = qw(DynaLoader);
 
-our $VERSION = '0.07';
+our $VERSION = '1.00';
 
 {
 no warnings;
@@ -182,6 +182,10 @@ create new ops. This is where it gets really hairy.
 In all of the above constructors, C<type> is either a numeric value
 representing the op type (C<62> is the addition operator, for instance)
 or the name of the op. (C<"add">)
+
+(Incidentally, if you know about custom ops and have registed them
+properly with the interpreter, you can create custom ops by name: 
+C<new B::OP("mycustomop",0)>, or whatever.)
 
 C<first>, C<last> and C<other> are ops to be attached to the current op;
 these should be C<B::OP> objects. If you haven't created the ops yet,

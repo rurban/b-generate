@@ -1,5 +1,10 @@
 Revision history for Perl extension B::Generate.
 
+1.00  Wed Aug 29 00:24:30 BST 2001
+    - It's time for a 1.0 release, this has been tested thoroughly
+      enough.
+    - Support for custom ops. Oh yes.
+
 0.07  Mon Jun  4 11:10:02 BST 2001
     - Oh, all sorts. Mainly undocumented. Added documentation about the
       undocumentation.

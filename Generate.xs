@@ -92,17 +92,58 @@ op_name_to_num(SV * name)
 {
     dTHX;
     char *s;
+    char *wanted = SvPV_nolen(name);
     int i =0;
-    if (SvIOK(name) && SvIV(name) >= 0 && SvIV(name) < OP_max)
+    int topop = OP_max;
+
+#ifdef PERL_CUSTOM_OPS
+    topop--;
+#endif
+
+    if (SvIOK(name) && SvIV(name) >= 0 && SvIV(name) < topop)
         return SvIV(name);
 
     for (s = PL_op_name[i]; s; s = PL_op_name[++i]) {
-        if (strEQ(s, SvPV_nolen(name)))
+        if (strEQ(s, wanted))
             return i;
     }
+#ifdef PERL_CUSTOM_OPS
+    if (PL_custom_op_names) {
+        HE* ent;
+        SV* value;
+        /* This is sort of a hv_exists, backwards */
+        (void)hv_iterinit(PL_custom_op_names);
+        while ((ent = hv_iternext(PL_custom_op_names))) {
+            if (strEQ(SvPV_nolen(hv_iterval(PL_custom_op_names,ent)),wanted))
+                return OP_CUSTOM;
+        }
+    }
+#endif
+
     croak("No such op \"%s\"", SvPV_nolen(name));
+
     return -1;
 }
+
+#ifdef PERL_CUSTOM_OPS
+static void* 
+custom_op_ppaddr(char *name)
+{
+    HE *ent;
+    SV *value;
+    if (!PL_custom_op_names)
+        return 0;
+    
+    /* This is sort of a hv_fetch, backwards */
+    (void)hv_iterinit(PL_custom_op_names);
+    while ((ent = hv_iternext(PL_custom_op_names))) {
+        if (strEQ(SvPV_nolen(hv_iterval(PL_custom_op_names,ent)),name))
+            return (void*)SvIV(hv_iterkeysv(ent));
+    }
+
+    return 0;
+}
+#endif
 
 static opclass
 cc_opclass(pTHX_ OP *o)
@@ -310,19 +351,15 @@ OP_sibling(o, ...)
     OUTPUT:
         RETVAL
 
-char * 
-OP_ppaddr(o)
+IV
+OP_ppaddr(o, ...)
 	B::OP		o
-    PREINIT:
-	int i;
-	SV *sv = sv_newmortal();
     CODE:
-	sv_setpvn(sv, "PL_ppaddr[OP_", 13);
-	sv_catpv(sv, PL_op_name[o->op_type]);
-	for (i=13; i<SvCUR(sv); ++i)
-	    SvPVX(sv)[i] = toUPPER(SvPVX(sv)[i]);
-	sv_catpv(sv, "]");
-	ST(0) = sv;
+        if (items > 1)
+            o->op_ppaddr = (void*)SvIV(ST(1));
+	RETVAL = PTR2IV((void*)(o->op_ppaddr));
+    OUTPUT:
+    RETVAL
 
 char *
 OP_desc(o)
@@ -406,7 +443,12 @@ OP_new(class, type, flags)
         sparepad = PL_curpad;
         saveop = PL_op;
         PL_curpad = AvARRAY(PL_comppad);
-        o = newOP(op_name_to_num(type), flags);
+        typenum = op_name_to_num(type);
+        o = newOP(typenum, flags);
+#ifdef PERL_CUSTOM_OPCODES
+        if (typenum == OP_CUSTOM)
+            o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
+#endif
         PL_curpad = sparepad;
         PL_op = saveop;
 	    ST(0) = sv_newmortal();
@@ -477,6 +519,7 @@ UNOP_new(class, type, flags, sv_first)
     SV * sv_first
     OP *first = NO_INIT
     OP *o = NO_INIT
+    I32 typenum = NO_INIT
     CODE:
         if (SvROK(sv_first)) {
             if (!sv_derived_from(sv_first, "B::OP"))
@@ -495,7 +538,12 @@ UNOP_new(class, type, flags, sv_first)
         SV**sparepad = PL_curpad;
         OP* saveop = PL_op;
         PL_curpad = AvARRAY(PL_comppad);
-        o = newUNOP(op_name_to_num(type), flags, first);
+        typenum = op_name_to_num(type);
+        o = newUNOP(typenum, flags, first);
+#ifdef PERL_CUSTOM_OPCODES
+        if (typenum == OP_CUSTOM)
+            o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
+#endif
         PL_curpad = sparepad;
         PL_op = saveop;
         }
@@ -560,8 +608,13 @@ BINOP_new(class, type, flags, sv_first, sv_last)
         
         if (optype == OP_SASSIGN || optype == OP_AASSIGN) 
             o = newASSIGNOP(flags, first, 0, last);
-        else
+        else {
             o = newBINOP(optype, flags, first, last);
+#ifdef PERL_CUSTOM_OPCODES
+            if (typenum == OP_CUSTOM)
+                o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
+#endif
+        }
 
         PL_curpad = sparepad;
         PL_op = saveop;
@@ -611,8 +664,14 @@ LISTOP_new(class, type, flags, sv_first, sv_last)
         {
         SV**sparepad = PL_curpad;
         OP* saveop   = PL_op;
+        I32 typenum = op_name_to_num(type);
+
         PL_curpad = AvARRAY(PL_comppad);
-        o = newLISTOP(op_name_to_num(type), flags, first, last);
+        o = newLISTOP(typenum, flags, first, last);
+#ifdef PERL_CUSTOM_OPCODES
+        if (typenum == OP_CUSTOM)
+            o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
+#endif
         PL_curpad = sparepad;
         PL_op = saveop;
         }
@@ -661,8 +720,13 @@ LOGOP_new(class, type, flags, sv_first, sv_last)
         {
         SV**sparepad = PL_curpad;
         OP* saveop   = PL_op;
+        I32 typenum  = op_name_to_num(type);
         PL_curpad = AvARRAY(PL_comppad);
-        o = newLOGOP(op_name_to_num(type), flags, first, last);
+        o = newLOGOP(typenum, flags, first, last);
+#ifdef PERL_CUSTOM_OPCODES
+        if (typenum == OP_CUSTOM)
+            o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
+#endif
         PL_curpad = sparepad;
         PL_op = saveop;
         }
@@ -847,7 +911,11 @@ SVOP_new(class, type, flags, sv)
             "First character to GVSV was not dollar");
         } else
             param = newSVsv(sv);
-        o = newSVOP(op_name_to_num(type), flags, param);
+        o = newSVOP(typenum, flags, param);
+#ifdef PERL_CUSTOM_OPCODES
+        if (typenum == OP_CUSTOM)
+            o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
+#endif
         PL_curpad = sparepad;
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::SVOP"), PTR2IV(o));

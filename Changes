@@ -1,5 +1,15 @@
 Revision history for Perl extension B::Generate.
 
+1.06 Sun Jul 28 18:43:06 CEST 2002
+    - Added support for changing PV in SvPV
+
+1.06 Tue Jul  2 14:37:43 CEST 2002
+    - If PL_compcv is set, we will return that cv instead
+      of trying to find the root. PL_compcv is only set
+      during compilation when we only can safely work with ops
+      during that compilation, and the next approach won't work
+      since optree isn't complete.
+
 1.05 Thu Jun 27 23:57:02 CEST 2002
     - Apperently we the previous release was a bit too quick.
       Sometimes the CV for the PL_eval_root doesn't have a real

@@ -1,4 +1,4 @@
-BEGIN { $| = 1; print "1..7\n"; }
+BEGIN { $| = 1; print "1..10\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use B qw(svref_2object);
 use B::Generate;
@@ -85,4 +85,24 @@ sub foo::baz {
     }
 }
 
+{
+    my $foo = "hi";
+    my $x = svref_2object(\$foo);
+    if($x->PV eq "hi") { 
+	print "ok 8\n";
+    } else {
+	print "not ok 8\n";
+    }
+    $x->PV("bar");
+    if($x->PV eq "bar") { 
+	print "ok 9\n";
+    } else {
+	print "not ok 9\n";
+    }
+    if($foo eq "bar") { 
+	print "ok 10\n";
+    } else {
+	print "not ok 10\n";
+    } 
 
+}

@@ -82,11 +82,13 @@ set_active_sub(SV *sv)
 {
 	AV* padlist; 
 	SV** svp;
+	//dTHX;
+	//	sv_dump(SvRV(sv));
 	padlist = CvPADLIST(SvRV(sv));
 	if(!padlist) {
 		dTHX;
 		sv_dump(sv);
-		sv_dump(padlist);
+		sv_dump((SV*)padlist);
 	}
 	svp = AvARRAY(padlist);
 	my_current_pad = AvARRAY((AV*)svp[1]);
@@ -99,6 +101,15 @@ find_cv_by_root(OP* o) {
   SV* key;
   SV* val;
   HE* cached;
+
+  if(PL_compcv && SvTYPE(PL_compcv) == SVt_PVCV &&
+	!PL_eval_root) {
+    //    printf("Compcv\n");
+    if(SvROK(PL_compcv))
+       sv_dump(SvRV(PL_compcv));
+    return newRV((SV*)PL_compcv);
+  }	
+
 
   if(!root_cache)
     root_cache = newHV();
@@ -118,13 +129,15 @@ find_cv_by_root(OP* o) {
     /* Special case, this is the main root */
     cached = hv_store_ent(root_cache, key, newRV((SV*)PL_main_cv), 0);
   } else if(PL_eval_root == root && PL_compcv) { 
-    SV* tmpcv = (CV*)NEWSV(1104,0);
+    SV* tmpcv = (SV*)NEWSV(1104,0);
     sv_upgrade((SV *)tmpcv, SVt_PVCV);
-     CvPADLIST(tmpcv) = CvPADLIST(PL_compcv);
-     SvREFCNT_inc(CvPADLIST(tmpcv));
-     CvROOT(tmpcv) = root;
-     OpREFCNT_inc(root);
-     cached = hv_store_ent(root_cache, key, newRV((SV*)tmpcv), 0);
+    CvPADLIST(tmpcv) = CvPADLIST(PL_compcv);
+    SvREFCNT_inc(CvPADLIST(tmpcv));
+    CvROOT(tmpcv) = root;
+    OP_REFCNT_LOCK;
+    OpREFCNT_inc(root);
+    OP_REFCNT_UNLOCK;
+    cached = hv_store_ent(root_cache, key, newRV((SV*)tmpcv), 0);
   } else {
     /* Need to walk the symbol table, yay */
     CV* cv = 0;
@@ -180,7 +193,7 @@ make_sv_object(pTHX_ SV *arg, SV *sv)
     sv_setiv(newSVrv(arg, type), iv);
     return arg;
 }
-
+#define PERL_CUSTOM_OPS
 static I32
 op_name_to_num(SV * name)
 {
@@ -245,7 +258,7 @@ cc_opclass(pTHX_ OP *o)
 {
     if (!o)
 	return OPc_NULL;
-
+    //    op_dump(o);
     if (o->op_type == 0)
 	return (o->op_flags & OPf_KIDS) ? OPc_UNOP : OPc_BASEOP;
 
@@ -560,16 +573,16 @@ OP_new(class, type, flags)
     OP *saveop = NO_INIT
     I32 typenum = NO_INIT
     CODE:
-//        sparepad = PL_curpad;
+        sparepad = PL_curpad;
         saveop = PL_op;
-//        PL_curpad = AvARRAY(PL_comppad);
+        PL_curpad = AvARRAY(PL_comppad);
         typenum = op_name_to_num(type);
         o = newOP(typenum, flags);
 #ifdef PERL_CUSTOM_OPCODES
         if (typenum == OP_CUSTOM)
             o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
 #endif
-	    //        PL_curpad = sparepad;
+        PL_curpad = sparepad;
         PL_op = saveop;
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::OP"), PTR2IV(o));
@@ -1043,8 +1056,8 @@ SVOP_new(class, type, flags, sv)
     SV* param = NO_INIT
     I32 typenum = NO_INIT
     CODE:
-	//    sparepad = PL_curpad;
-        //PL_curpad = AvARRAY(PL_comppad);
+	sparepad = PL_curpad;
+        PL_curpad = AvARRAY(PL_comppad);
         saveop = PL_op;
         typenum = op_name_to_num(type); /* XXX More classes here! */
         if (typenum == OP_GVSV) {
@@ -1074,8 +1087,14 @@ SVOP_new(class, type, flags, sv)
 MODULE = B::Generate	PACKAGE = B::PADOP		PREFIX = PADOP_
 
 PADOFFSET
-PADOP_padix(o)
+PADOP_padix(o, ...)
 	B::PADOP o
+    CODE:
+        if (items > 1)
+            o->op_padix = (PADOFFSET)SvIV(ST(1));
+        RETVAL = o->op_padix;
+    OUTPUT:
+        RETVAL
 
 B::SV
 PADOP_sv(o)
@@ -1264,6 +1283,26 @@ CV_newsub_simple(class, name, block)
         RETVAL
         
 
+MODULE = B::Generate	PACKAGE = B::PV		PREFIX = Sv
 
+void
+SvPV(sv,...)
+	B::PV	sv
+    CODE:
+{
+  if(items > 1) {
+    sv_setpv(sv, SvPV_nolen(ST(1)));    
+  } 
+  ST(0) = sv_newmortal();
+  if( SvPOK(sv) ) { 
+    sv_setpvn(ST(0), SvPVX(sv), SvCUR(sv));
+    SvFLAGS(ST(0)) |= SvUTF8(sv);
+  }
+  else {
+    /* XXX for backward compatibility, but should fail */
+    /* croak( "argument is not SvPOK" ); */
+    sv_setpvn(ST(0), NULL, 0);
+  }
+}
 
 

@@ -270,6 +270,14 @@ SVtoO(SV* sv) {
     return 0; /* Not reached */
 }
 
+/* Pre-5.7 compatibility */
+#ifndef op_null
+void op_clear(OP* o) {
+    /* Fake it, I'm bored */
+    // croak("This operation requires a newer version of Perl");
+}
+#endif
+
 typedef OP	*B__OP;
 typedef UNOP	*B__UNOP;
 typedef BINOP	*B__BINOP;
@@ -474,6 +482,19 @@ OP_newstate(class, flags, label, oldo)
         sv_setiv(newSVrv(ST(0), "B::LISTOP"), PTR2IV(o));
 
 B::OP
+OP_mutate(o, type)
+    B::OP o
+    SV* type
+    I32 rtype = NO_INIT
+    CODE:
+        rtype = op_name_to_num(type);
+        o->op_ppaddr = PL_ppaddr[rtype];
+        o->op_type = rtype;
+
+    OUTPUT:
+        o
+
+B::OP
 OP_convert(o, type, flags)
     B::OP o
     I32 flags
@@ -484,8 +505,10 @@ OP_convert(o, type, flags)
         else
             o->op_flags &= ~OPf_WANT;
 
-        if (!(PL_opargs[type] & OA_MARK))
-            op_null(o);
+        if (!(PL_opargs[type] & OA_MARK) && o->op_type != OP_NULL) {
+            op_clear(o);
+            o->op_targ = o->op_type;
+        }
 
         o->op_type = type;
         o->op_ppaddr = PL_ppaddr[type];

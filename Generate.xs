@@ -370,6 +370,12 @@ OP_private(o, ...)
         RETVAL
 
 void
+OP_dump(o)
+    B::OP o
+    CODE:
+        op_dump(o);
+
+void
 OP_new(class, type, flags)
     SV * class
     SV * type
@@ -673,12 +679,35 @@ PMOP_precomp(o)
 MODULE = B::Generate	PACKAGE = B::SVOP		PREFIX = SVOP_
 
 B::SV
-SVOP_sv(o)
+SVOP_sv(o, ...)
 	B::SVOP	o
+    CODE:
+        if (items > 1)
+            cSVOPo->op_sv = newSVsv(ST(1));
+        RETVAL = cSVOPo->op_sv;
+    OUTPUT:
+        RETVAL
 
 B::GV
 SVOP_gv(o)
 	B::SVOP	o
+
+void
+SVOP_new(class, type, flags, sv)
+    SV * class
+    SV * type
+    I32 flags
+    SV * sv
+    SV** sparepad = NO_INIT
+    OP *o = NO_INIT
+    I32 typenum = NO_INIT
+    CODE:
+        sparepad = PL_curpad;
+        PL_curpad = AvARRAY(PL_comppad);
+        o = newSVOP(op_name_to_num(type), flags, newSVsv(sv));
+        PL_curpad = sparepad;
+	    ST(0) = sv_newmortal();
+        sv_setiv(newSVrv(ST(0), "B::SVOP"), PTR2IV(o));
 
 #define PADOP_padix(o)	o->op_padix
 #define PADOP_sv(o)	(o->op_padix ? PL_curpad[o->op_padix] : Nullsv)
@@ -818,3 +847,30 @@ COP_new(class, flags, name, sv_first)
         }
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::COP"), PTR2IV(o));
+
+MODULE = B::Generate  PACKAGE = B::SV  PREFIX = Sv
+
+SV*
+Svsv(sv)
+    B::SV   sv
+    CODE:
+        RETVAL = newSVsv(sv);
+    OUTPUT:
+        RETVAL
+
+void*
+Svdump(sv)
+    B::SV   sv
+    CODE:
+        sv_dump(sv);
+
+U32
+SvFLAGS(sv, ...)
+    B::SV   sv
+    CODE:
+        if (items > 1)
+            sv->sv_flags = SvIV(ST(1));
+        RETVAL = SvFLAGS(sv);
+    OUTPUT:
+        RETVAL
+

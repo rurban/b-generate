@@ -9,7 +9,7 @@ require DynaLoader;
 
 our @ISA = qw(DynaLoader);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 {
 no warnings;
@@ -104,6 +104,33 @@ best one will be in conjuction with source filters; have your source
 filter parse an input file in a foreign language, create an op tree for
 it and get Perl to execute it. Then email me and tell me how you did it.
 And why.
+
+=head2 OTHER METHODS
+
+=over 3
+
+=item  $b_sv->sv
+
+Returns a real SV instead of a C<B::SV>. For instance:
+
+    $b_sv = $svop->sv;
+    if ($b_sv->sv == 3) {
+        print "SVOP's SV has an IV of 3\n"
+    }
+
+You can't use this to set the SV. That would be scary.
+
+=item $op->dump
+
+Runs C<Perl_op_dump> on an op; this is roughly equivalent to
+C<B::Debug>, but not quite.
+
+=item $b_sv->dump
+
+Runs C<Perl_sv_dump> on an SV; this is exactly equivalent to
+C<< Data::Dumper::dump($b_sv->sv) >>
+
+=back
 
 =head2 EXPORT
 

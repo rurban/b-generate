@@ -1,5 +1,11 @@
 Revision history for Perl extension B::Generate.
 
+0.04  Wed Mar 21 00:18:27 2001
+    - Urgh. Fixed *nasty* segfault bug. (PL_op==0x0 after ->new)
+    - Added "linklist" and undocumented "clean" method
+    - Added "newstate" method
+    - Documentation nits
+
 0.03  Wed Jan 10 00:21:08 2001
     - Test script needed a fix to stop ->targ pointing into never-never
       land. Not *exactly* sure why.

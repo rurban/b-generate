@@ -9,7 +9,7 @@ require DynaLoader;
 
 our @ISA = qw(DynaLoader);
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 {
 no warnings;
@@ -17,6 +17,25 @@ bootstrap B::Generate $VERSION;
 }
 
 # Preloaded methods go here.
+
+sub B::OP::linklist {
+    # Adapted from op.c
+    my $o = shift;
+    if ($o->can("first") and $o->first and ${$o->first}) {
+        $o->next($o->first->linklist);
+        for (my $kid = $o->first; $$kid; $kid=$kid->sibling) {
+            if (${$kid->sibling}) { 
+                $kid->next($kid->sibling->linklist);
+            } else {
+                $kid->next($o);
+            }
+        }
+    } else {
+        $o->next($o);
+    }
+    $o->clean;
+    return $o->next;
+}
 
 1;
 __END__
@@ -96,6 +115,13 @@ don't worry; give a false value, and fill them in later:
     # ... create some more ops ...
     $x->first($y);
 
+In addition, one may create a new C<nextstate> operator with
+
+    newstate B::op ( flags, label, op)
+
+in the same manner as C<B::COP::new> - this will also, however, add the
+C<lineseq> op.
+
 Finally, you can set the main root and the starting op by passing ops
 to the C<B::main_root> and C<B::main_start> functions.
 
@@ -128,7 +154,14 @@ C<B::Debug>, but not quite.
 =item $b_sv->dump
 
 Runs C<Perl_sv_dump> on an SV; this is exactly equivalent to
-C<< Data::Dumper::dump($b_sv->sv) >>
+C<< Devel::Peek::dump($b_sv->sv) >>
+
+=item $b_op->linklist
+
+Sets the C<op_next> pointers in the tree in correct execution order, 
+overwriting the old C<next> pointers. You B<need> to do this once you've
+created an op tree for execution, unless you've carefully threaded it
+together yourself.
 
 =back
 
@@ -139,6 +172,7 @@ None.
 =head1 AUTHOR
 
 Simon Cozens, C<simon@cpan.org>
+(Who else?)
 
 =head1 SEE ALSO
 

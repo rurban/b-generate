@@ -257,6 +257,13 @@ typedef MAGIC	*B__MAGIC;
 
 MODULE = B::Generate	PACKAGE = B	PREFIX = B_
 
+void
+B_fudge()
+    CODE:
+        SSCHECK(2);
+        SSPUSHPTR((SV*)PL_comppad);  
+        SSPUSHINT(SAVEt_COMPPAD);
+
 B::OP
 B_main_root(...)
     PROTOTYPE: ;$
@@ -376,20 +383,49 @@ OP_dump(o)
         op_dump(o);
 
 void
+OP_clean(o)
+    B::OP o
+    CODE:
+        if (o == PL_main_root)
+            o->op_next = Nullop;
+
+void
 OP_new(class, type, flags)
     SV * class
     SV * type
     I32 flags
     SV** sparepad = NO_INIT
     OP *o = NO_INIT
+    OP *saveop = NO_INIT
     I32 typenum = NO_INIT
     CODE:
         sparepad = PL_curpad;
+        saveop = PL_op;
         PL_curpad = AvARRAY(PL_comppad);
         o = newOP(op_name_to_num(type), flags);
         PL_curpad = sparepad;
+        PL_op = saveop;
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::OP"), PTR2IV(o));
+
+void
+OP_newstate(class, flags, label, oldo)
+    SV * class
+    I32 flags
+    char * label
+    B::OP oldo
+    SV** sparepad = NO_INIT
+    OP *o = NO_INIT
+    OP *saveop = NO_INIT
+    CODE:
+        sparepad = PL_curpad;
+        saveop = PL_op;
+        PL_curpad = AvARRAY(PL_comppad);
+        o = newSTATEOP(flags, label, oldo);
+        PL_curpad = sparepad;
+        PL_op = saveop;
+	    ST(0) = sv_newmortal();
+        sv_setiv(newSVrv(ST(0), "B::LISTOP"), PTR2IV(o));
 
 MODULE = B::Generate	PACKAGE = B::UNOP		PREFIX = UNOP_
 
@@ -427,9 +463,11 @@ UNOP_new(class, type, flags, sv_first)
 
         {
         SV**sparepad = PL_curpad;
+        OP* saveop = PL_op;
         PL_curpad = AvARRAY(PL_comppad);
         o = newUNOP(op_name_to_num(type), flags, first);
         PL_curpad = sparepad;
+        PL_op = saveop;
         }
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::UNOP"), PTR2IV(o));
@@ -485,9 +523,11 @@ BINOP_new(class, type, flags, sv_first, sv_last)
 
         {
         SV**sparepad = PL_curpad;
+        OP* saveop = PL_op;
         PL_curpad = AvARRAY(PL_comppad);
         o = newBINOP(op_name_to_num(type), flags, first, last);
         PL_curpad = sparepad;
+        PL_op = saveop;
         }
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::BINOP"), PTR2IV(o));
@@ -543,9 +583,11 @@ LOGOP_new(class, type, flags, sv_first, sv_other)
 
         {
         SV**sparepad = PL_curpad;
+        OP *saveop = PL_op;
         PL_curpad = AvARRAY(PL_comppad);
         o = newBINOP(op_name_to_num(type), flags, first, other);
         PL_curpad = sparepad;
+        PL_op = saveop;
         }
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::LOGOP"), PTR2IV(o));
@@ -601,9 +643,11 @@ LISTOP_new(class, type, flags, sv_first, sv_last)
 
         {
         SV**sparepad = PL_curpad;
+        OP* saveop   = PL_op;
         PL_curpad = AvARRAY(PL_comppad);
         o = newBINOP(op_name_to_num(type), flags, first, last);
         PL_curpad = sparepad;
+        PL_op = saveop;
         }
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::LISTOP"), PTR2IV(o));
@@ -700,14 +744,27 @@ SVOP_new(class, type, flags, sv)
     SV * sv
     SV** sparepad = NO_INIT
     OP *o = NO_INIT
+    OP *saveop = NO_INIT
+    SV* param = NO_INIT
     I32 typenum = NO_INIT
     CODE:
         sparepad = PL_curpad;
         PL_curpad = AvARRAY(PL_comppad);
-        o = newSVOP(op_name_to_num(type), flags, newSVsv(sv));
+        saveop = PL_op;
+        typenum = op_name_to_num(type); /* XXX More classes here! */
+        if (typenum == OP_GVSV) {
+            if (*(SvPV_nolen(sv)) == '$') 
+                param = (SV*)gv_fetchpv(SvPVX(sv)+1, TRUE, SVt_PV);
+            else
+            Perl_croak(aTHX_ 
+            "First character to GVSV was not dollar");
+        } else
+            param = newSVsv(sv);
+        o = newSVOP(op_name_to_num(type), flags, param);
         PL_curpad = sparepad;
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::SVOP"), PTR2IV(o));
+        PL_op = saveop;
 
 #define PADOP_padix(o)	o->op_padix
 #define PADOP_sv(o)	(o->op_padix ? PL_curpad[o->op_padix] : Nullsv)
@@ -841,9 +898,11 @@ COP_new(class, flags, name, sv_first)
 
         {
         SV**sparepad = PL_curpad;
+        OP* saveop = PL_op;
         PL_curpad = AvARRAY(PL_comppad);
         o = newSTATEOP(flags, name, first);
         PL_curpad = sparepad;
+        PL_op = saveop;
         }
 	    ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::COP"), PTR2IV(o));

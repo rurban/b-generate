@@ -1,5 +1,15 @@
 Revision history for Perl extension B::Generate.
 
+0.07  Mon Jun  4 11:10:02 BST 2001
+    - Oh, all sorts. Mainly undocumented. Added documentation about the
+      undocumentation.
+    - append_elem has been fixed up, and prepend_elem has been added.
+    - convert and scope
+    - assignment
+    - constructor for conditional (if/then/else) ops. (B::LOGOP->newcond)
+    - constructor for subroutines. (B::CV->newsub_simple)
+    - lots of field testing with the bytecode compiler. (Shiny-Byte)
+
 0.06  Mon May 28 18:08:12 BST 2001
     - Backed out disastrous context compilation fix
     - Fixed B::LOGOP->new and B::LISTOP->new - it was creating binops and 

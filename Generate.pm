@@ -9,17 +9,20 @@ require DynaLoader;
 
 our @ISA = qw(DynaLoader);
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 {
 no warnings;
 bootstrap B::Generate $VERSION;
 }
 
-# Preloaded methods go here.
+use constant OP_LIST => 141; # MUST FIX CONSTANTS.
+use constant OPf_PARENS => 8; # *MUST* *FIX* *CONSTANTS*.
+use constant OPf_KIDS => 4;
+
+# This is where we implement op.c in Perl. Sssh.
 
 sub B::OP::linklist {
-    # Adapted from op.c
     my $o = shift;
     if ($o->can("first") and $o->first and ${$o->first}) {
         $o->next($o->first->linklist);
@@ -36,6 +39,75 @@ sub B::OP::linklist {
     $o->clean;
     return $o->next;
 }
+
+sub B::OP::append_elem {
+    my ($class, $type, $first, $last) = @_;
+    return $last unless $first and $$first;
+    return $first unless $last and $$last;
+    
+    if ($first->type() != $type or 
+        ($type == OP_LIST and ($first->flags & OPf_PARENS))) {
+	return B::LISTOP->new($type,0,$first,$last)
+    }
+    
+    if ($first->flags() & OPf_KIDS) {
+        
+        $first->last->sibling($last);
+    } else {
+        $first->flags($first->flags | OPf_KIDS);
+        $first->first($last);
+    }
+    $first->last($last);
+    return $first;
+}
+
+sub B::OP::prepend_elem {
+    my ($class, $type, $first, $last) = @_;
+    if ($last->type() != $type) {
+        return B::LISTOP->new($type,0,$first,$last)
+    }
+    
+    if ($type == OP_LIST) {
+        $first->sibling($last->first->sibling);
+        $last->first->sibling($first);
+        $last->flags($last->flags & ~OPf_PARENS)
+            unless ($first->flags & OPf_PARENS);
+    } else {
+        unless ($last->flags & OPf_KIDS) {
+            $last->last($first);
+            $last->flags($last->flags | OPf_KIDS);
+        }
+        $first->sibling($last->first);
+        $last->first($first);
+    }
+    $last->flags($last->flags | OPf_KIDS);
+    return $last; # I cannot believe this works.
+}
+
+sub B::OP::scope {
+    my $o = shift;
+    return unless $o and $$o;
+    if ($o->flags & OPf_PARENS) {
+        $o = B::OP->prepend_elem(
+            B::opnumber("lineseq"),
+            B::OP->new("enter", 0),
+            $o);
+        $o->type(B::opnumber("leave"));
+    } else {
+        if ($o->type == B::opnumber("lineseq")) {
+            my $kid;
+            $o->type(B::opnumber("scope"));
+            $kid=$o->first;
+            die "This probably shouldn't happen (\$kid->null)\n"
+                if ($kid->type == B::opnumber("nextstate") 
+                or $kid->type == B::opnumber("dbstate"))
+        } else {
+            $o = B::LISTOP->new("scope", 0, $o, undef);
+        }
+    }
+    return ($o);
+}
+
 
 1;
 __END__
@@ -68,10 +140,14 @@ B::Generate - Create your own op trees.
 
 =head1 WARNING
 
-! WARNING ! WARNING ! WARNING ! WARNING ! WARNING ! WARNING ! WARNING ! WARNING
+This module will create segmentation faults if you don't know how to
+use it properly. Further warning: sometimes B<I> don't know how to use
+it properly.
 
-C<B::Generate> is alpha-quality software. Large parts of it don't work.
-Even the parts that B<do> work should give you the willies. 
+There B<are> lots of other methods and utility functions, but they are
+not documented here. This is deliberate, rather than just through
+laziness. You are expected to have read the Perl and XS sources to this
+module before attempting to do anything with it.
 
 Patches welcome.
 

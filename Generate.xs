@@ -342,8 +342,10 @@ U16
 OP_type(o, ...)
 	B::OP		o
     CODE:
-        if (items > 1)
+        if (items > 1) {
             o->op_type = (U16)SvIV(ST(1));
+            o->op_ppaddr = PL_ppaddr[o->op_type];
+        }
         RETVAL = o->op_type;
     OUTPUT:
         RETVAL
@@ -430,15 +432,30 @@ OP_newstate(class, flags, label, oldo)
         sv_setiv(newSVrv(ST(0), "B::LISTOP"), PTR2IV(o));
 
 B::OP
-OP_append_elem(class, type, first, last)
-    SV* class
+OP_convert(o, type, flags)
+    B::OP o
+    I32 flags
     I32 type
-    B::OP first
-    B::OP last
     CODE:
-        RETVAL = append_elem(aTHX_ type, first, last);
+        if (!o || o->op_type != OP_LIST)
+            o = newLISTOP(OP_LIST, 0, o, Nullop);
+        else
+            o->op_flags &= ~OPf_WANT;
+
+        if (!(PL_opargs[type] & OA_MARK))
+            op_null(o);
+
+        o->op_type = type;
+        o->op_ppaddr = PL_ppaddr[type];
+        o->op_flags |= flags;
+
+        o = CALL_FPTR(PL_check[type])(aTHX_ (OP*)o);
+
+        if (o->op_type == type)
+            o = fold_constants(o);
+
     OUTPUT:
-        RETVAL
+        o
 
 MODULE = B::Generate	PACKAGE = B::UNOP		PREFIX = UNOP_
 
@@ -537,8 +554,15 @@ BINOP_new(class, type, flags, sv_first, sv_last)
         {
         SV**sparepad = PL_curpad;
         OP* saveop = PL_op;
+        I32 optype = op_name_to_num(type);
+
         PL_curpad = AvARRAY(PL_comppad);
-        o = newBINOP(op_name_to_num(type), flags, first, last);
+        
+        if (optype == OP_SASSIGN || optype == OP_AASSIGN) 
+            o = newASSIGNOP(flags, first, 0, last);
+        else
+            o = newBINOP(optype, flags, first, last);
+
         PL_curpad = sparepad;
         PL_op = saveop;
         }
@@ -639,6 +663,68 @@ LOGOP_new(class, type, flags, sv_first, sv_last)
         OP* saveop   = PL_op;
         PL_curpad = AvARRAY(PL_comppad);
         o = newLOGOP(op_name_to_num(type), flags, first, last);
+        PL_curpad = sparepad;
+        PL_op = saveop;
+        }
+	    ST(0) = sv_newmortal();
+        sv_setiv(newSVrv(ST(0), "B::LOGOP"), PTR2IV(o));
+
+void
+LOGOP_newcond(class, flags, sv_first, sv_last, sv_else)
+    SV * class
+    I32 flags
+    SV * sv_first
+    SV * sv_last
+    SV * sv_else
+    OP *first = NO_INIT
+    OP *last = NO_INIT
+    OP *elseo = NO_INIT
+    OP *o = NO_INIT
+    CODE:
+        if (SvROK(sv_first)) {
+            if (!sv_derived_from(sv_first, "B::OP"))
+                Perl_croak(aTHX_ "Reference 'first' was not a B::OP object");
+            else {
+                IV tmp = SvIV((SV*)SvRV(sv_first));
+                first = INT2PTR(OP*, tmp);
+            }
+        } else if (SvTRUE(sv_first))
+            Perl_croak(aTHX_ 
+            "'first' argument to B::UNOP->new should be a B::OP object or a false value");
+        else
+            first = Nullop;
+
+        if (SvROK(sv_last)) {
+            if (!sv_derived_from(sv_last, "B::OP"))
+                Perl_croak(aTHX_ "Reference 'last' was not a B::OP object");
+            else {
+                IV tmp = SvIV((SV*)SvRV(sv_last));
+                last = INT2PTR(OP*, tmp);
+            }
+        } else if (SvTRUE(sv_last))
+            Perl_croak(aTHX_ 
+            "'last' argument to B::BINOP->new should be a B::OP object or a false value");
+        else
+            last = Nullop;
+
+        if (SvROK(sv_else)) {
+            if (!sv_derived_from(sv_else, "B::OP"))
+                Perl_croak(aTHX_ "Reference 'else' was not a B::OP object");
+            else {
+                IV tmp = SvIV((SV*)SvRV(sv_else));
+                elseo = INT2PTR(OP*, tmp);
+            }
+        } else if (SvTRUE(sv_else))
+            Perl_croak(aTHX_ 
+            "'last' argument to B::BINOP->new should be a B::OP object or a false value");
+        else
+            elseo = Nullop;
+
+        {
+        SV**sparepad = PL_curpad;
+        OP* saveop   = PL_op;
+        PL_curpad = AvARRAY(PL_comppad);
+        o = newCONDOP(flags, first, last, elseo);
         PL_curpad = sparepad;
         PL_op = saveop;
         }
@@ -934,3 +1020,22 @@ SvFLAGS(sv, ...)
     OUTPUT:
         RETVAL
 
+MODULE = B::Generate	PACKAGE = B::CV		PREFIX = CV_
+
+
+B::CV
+CV_newsub_simple(class, name, block)
+    SV* class
+    SV* name
+    B::OP block
+    CV* mycv  = NO_INIT
+    OP* o = NO_INIT
+
+    CODE:
+        o = newSVOP(aTHX_ OP_CONST, 0, name);
+        mycv = newSUB(start_subparse(FALSE, 0), o, Nullop, block);
+        /*op_free(o); */
+        RETVAL = mycv;
+    OUTPUT:
+        RETVAL
+        

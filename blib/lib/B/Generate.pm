@@ -9,7 +9,7 @@ require DynaLoader;
 
 our @ISA = qw(DynaLoader);
 
-our $VERSION = '1.08';
+our $VERSION = '1.07';
 
 {
 no warnings;
@@ -251,7 +251,8 @@ None.
 
 =head1 AUTHOR
 
-Joshua b. Jore C<jjore@cpan.org>
+Simon Cozens, C<simon@cpan.org>
+(Who else?)
 
 =head1 SEE ALSO
 

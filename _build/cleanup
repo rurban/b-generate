@@ -1,0 +1,7 @@
+{
+          'lib/B/Generate.bs' => 1,
+          'lib/B/Generate.c' => 1,
+          'lib/B/Generate.o' => 1,
+          'blib/arch/auto/B/Generate/Generate.so' => 1,
+          'blib' => 1
+        }

@@ -84,3 +84,5 @@ sub foo::baz {
 	print "not ok 7\n";
     }
 }
+
+

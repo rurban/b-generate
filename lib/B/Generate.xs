@@ -117,6 +117,8 @@ find_cv_by_root(OP* o) {
   if(PL_main_root == root) {
     /* Special case, this is the main root */
     cached = hv_store_ent(root_cache, key, newRV((SV*)PL_main_cv), 0);
+  } else if(PL_eval_root == root && PL_compcv) { 
+    return newRV(PL_compcv);
   } else {
     /* Need to walk the symbol table, yay */
     CV* cv = 0;

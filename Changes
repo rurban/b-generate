@@ -1,5 +1,8 @@
 Revision history for Perl extension B::Generate.
 
+1.04 Thu Jun 27 22:41:07 CEST 2002
+    - Made find_cv support working in an existing eval ""
+
 1.00  Wed Aug 29 00:24:30 BST 2001
     - It's time for a 1.0 release, this has been tested thoroughly
       enough.

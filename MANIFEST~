@@ -11,5 +11,5 @@ lib/B/Generate.xs
 Makefile.PL
 MANIFEST
 META.yaml
+test.pl
 typemap
-t/02basic.t

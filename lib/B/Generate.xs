@@ -425,6 +425,17 @@ typedef MAGIC	*B__MAGIC;
 
 MODULE = B::Generate	PACKAGE = B	PREFIX = B_
 
+BOOT:
+{
+    specialsv_list[0] = Nullsv;
+    specialsv_list[1] = &PL_sv_undef;
+    specialsv_list[2] = &PL_sv_yes;
+    specialsv_list[3] = &PL_sv_no;
+    specialsv_list[4] = pWARN_ALL;
+    specialsv_list[5] = pWARN_NONE;
+    specialsv_list[6] = pWARN_STD;
+}
+
 void
 B_fudge()
     CODE:

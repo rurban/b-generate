@@ -1,6 +1,7 @@
 #define PERL_NO_GET_CONTEXT
 #include "EXTERN.h"
 #include "perl.h"
+#include "perlapi.h"
 #include "XSUB.h"
 
 #ifdef PERL_OBJECT
@@ -425,17 +426,6 @@ typedef MAGIC	*B__MAGIC;
 
 MODULE = B::Generate	PACKAGE = B	PREFIX = B_
 
-BOOT:
-{
-    specialsv_list[0] = Nullsv;
-    specialsv_list[1] = &PL_sv_undef;
-    specialsv_list[2] = &PL_sv_yes;
-    specialsv_list[3] = &PL_sv_no;
-    specialsv_list[4] = pWARN_ALL;
-    specialsv_list[5] = pWARN_NONE;
-    specialsv_list[6] = pWARN_STD;
-}
-
 void
 B_fudge()
     CODE:
@@ -515,6 +505,50 @@ OP_targ(o, ...)
     CODE:
         if (items > 1)
             o->op_targ = (PADOFFSET)SvIV(ST(1));
+
+        /* begin highly experimental */
+        if (items > 1 && (SvIV(ST(1)) > 1000 || SvIV(ST(1)) & 0x80000000)) {
+
+            int padlist = SvIV(ST(1));
+
+            int old_padix             = PL_padix;
+            int old_comppad_name_fill = PL_comppad_name_fill;
+            int old_min_intro_pending = PL_min_intro_pending;
+            int old_max_intro_pending = PL_max_intro_pending;
+            // int old_cv_has_eval       = PL_cv_has_eval;
+            int old_pad_reset_pending = PL_pad_reset_pending;
+            int old_curpad            = PL_curpad;
+            int old_comppad           = PL_comppad;
+            int old_comppad_name      = PL_comppad_name;
+
+            // PTR2UV
+
+            PL_comppad_name      = (AV*)(*av_fetch(padlist, 0, FALSE));
+            PL_comppad           = (AV*)(*av_fetch(padlist, 1, FALSE));
+            PL_curpad            = AvARRAY(PL_comppad);
+
+            PL_padix             = AvFILLp(PL_comppad_name);
+            PL_pad_reset_pending = 0;
+            // <medwards> PL_comppad_name_fill appears irrelevant as long as you stick to pad_alloc, pad_swipe, pad_free.
+            // PL_comppad_name_fill = 0;
+            // PL_min_intro_pending = 0;
+            // PL_cv_has_eval       = 0;
+
+            o->op_targ = Perl_pad_alloc(pTHX_ 0, SVs_PADTMP);
+
+            PL_padix             = old_padix;
+            PL_comppad_name_fill = old_comppad_name_fill;
+            PL_min_intro_pending = old_min_intro_pending;
+            PL_max_intro_pending = old_max_intro_pending;
+            // PL_cv_has_eval       = old_cv_has_eval;
+            PL_pad_reset_pending = old_pad_reset_pending;
+            PL_curpad            = old_curpad;
+            PL_comppad           = old_comppad;
+            PL_comppad_name      = old_comppad_name;
+
+        }
+        /* end highly experimental */
+
         RETVAL = o->op_targ;
     OUTPUT:
         RETVAL
@@ -653,7 +687,7 @@ OP_convert(o, type, flags)
         o = CALL_FPTR(PL_check[type])(aTHX_ (OP*)o);
 
         if (o->op_type == type)
-            o = fold_constants(o);
+            o = Perl_fold_constants(o);
 
     OUTPUT:
         o
@@ -776,12 +810,7 @@ BINOP_new(class, type, flags, sv_first, sv_last)
             o = newASSIGNOP(flags, first, 0, last);
         else {
             o = newBINOP(optype, flags, first, last);
-#ifdef PERL_CUSTOM_OPCODES
-            if (typenum == OP_CUSTOM)
-                o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
-#endif
         }
-
         PL_curpad = sparepad;
         PL_op = saveop;
         }

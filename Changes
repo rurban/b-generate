@@ -1,11 +1,5 @@
 Revision history for Perl extension B::Generate.
 
-1.08 Thu Nov 25 23:00:00 CST 2004
-    - Remembered to change Simon's address to mine
-
-1.07 Thu Nov 25 22:49:00 CST 2004
-    - Added some missing contants to Generate.xs
-
 1.06 Sun Jul 28 18:43:06 CEST 2002
     - Added support for changing PV in SvPV
 

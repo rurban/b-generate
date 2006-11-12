@@ -1,0 +1,20 @@
+---
+name: B-Generate
+version: 1.06_2
+author:
+  - |-
+    Simon Cozens, C<simon@cpan.org>
+    (Who else?)
+abstract: Create your own op trees.
+license: unknown
+build_requires:
+  Test::More: 0.42
+dynamic_config: 0
+provides:
+  B::Generate:
+    file: lib/B/Generate.pm
+    version: 1.06_2
+generated_by: Module::Build version 0.2805
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2

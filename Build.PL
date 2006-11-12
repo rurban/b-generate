@@ -1,10 +1,9 @@
 use strict;
 use Module::Build;
 
-my $class = Module::Build->subclass
-    (
-     class => 'My::Builder',
-     code => q{
+my $class = Module::Build->subclass(
+    class => 'My::Builder',
+    code => q{
 sub compile_c {
     my($self, $file) = @_;
     $self->SUPER::compile_c($file);
@@ -13,16 +12,17 @@ sub compile_c {
     $self->{config}->{lddlflags} =~s/-undefined suppress/-undefined error/;
     $self->{config}->{lddlflags} .= " $self->{config}->{archlibexp}/CORE/$self->{config}->{libperl}";
 }
-     }
-     );
-     
+    }
+);
 
-my $build = $class->new
-    (
-     module_name => 'B::Generate',
-     license => 'unknown',
-     dynamic_config => 0,
-     );
+my $build = $class->new(
+    module_name => 'B::Generate',
+    license => 'unknown',
+    dynamic_config => 0,
+    build_requires => {
+        'Test::More' => 0.42
+    }
+);
 $build->create_build_script;
 
 

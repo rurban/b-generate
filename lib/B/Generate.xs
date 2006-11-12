@@ -461,7 +461,7 @@ B::CV
 OP_find_cv(o)
 	B::OP	o
     CODE:
-	RETVAL = SvRV(find_cv_by_root((OP*)o));
+	RETVAL = (CV*) SvRV(find_cv_by_root((OP*)o));
     OUTPUT:
 	RETVAL
 
@@ -534,7 +534,7 @@ OP_targ(o, ...)
             // PL_min_intro_pending = 0;
             // PL_cv_has_eval       = 0;
 
-            o->op_targ = Perl_pad_alloc(pTHX_ 0, SVs_PADTMP);
+            o->op_targ = Perl_pad_alloc(aTHX_ 0, SVs_PADTMP);
 
             PL_padix             = old_padix;
             PL_comppad_name_fill = old_comppad_name_fill;
@@ -687,7 +687,7 @@ OP_convert(o, type, flags)
         o = CALL_FPTR(PL_check[type])(aTHX_ (OP*)o);
 
         if (o->op_type == type)
-            o = Perl_fold_constants(o);
+            o = Perl_fold_constants(aTHX_ o);
 
     OUTPUT:
         o

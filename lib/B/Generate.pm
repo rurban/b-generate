@@ -9,12 +9,9 @@ require DynaLoader;
 
 our @ISA = qw(DynaLoader);
 
-our $VERSION = '1.06_1';
+our $VERSION = '1.06_2';
 
-{
-no warnings;
 bootstrap B::Generate $VERSION;
-}
 
 use constant OP_LIST => 141; # MUST FIX CONSTANTS.
 use constant OPf_PARENS => 8; # *MUST* *FIX* *CONSTANTS*.

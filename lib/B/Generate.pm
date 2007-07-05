@@ -6,105 +6,115 @@ use warnings;
 use B;
 
 require DynaLoader;
+use vars qw( @ISA $VERSION );
+@ISA = qw(DynaLoader);
+$VERSION = '1.09';
 
-our @ISA = qw(DynaLoader);
+{
+    # 'no warnings' does not work.
+    local $SIG{__WARN__} = sub {
+        return if $_[0] =~ /Subroutine B(?:::\w+)+ redefined/;
+        warn $_[0];
+    };
+    B::Generate->bootstrap($VERSION);
+}
 
-our $VERSION = '1.06_2';
-
-bootstrap B::Generate $VERSION;
-
-use constant OP_LIST => 141; # MUST FIX CONSTANTS.
-use constant OPf_PARENS => 8; # *MUST* *FIX* *CONSTANTS*.
-use constant OPf_KIDS => 4;
+package B::OP;
+use constant OP_LIST    => 141;    # MUST FIX CONSTANTS.
+use constant OPf_PARENS => 8;      # *MUST* *FIX* *CONSTANTS*.
+use constant OPf_KIDS   => 4;
 
 # This is where we implement op.c in Perl. Sssh.
-
-sub B::OP::linklist {
+sub linklist {
     my $o = shift;
-    if ($o->can("first") and $o->first and ${$o->first}) {
-        $o->next($o->first->linklist);
-        for (my $kid = $o->first; $$kid; $kid=$kid->sibling) {
-            if (${$kid->sibling}) { 
-                $kid->next($kid->sibling->linklist);
-            } else {
+    if ( $o->can("first") and $o->first and ${ $o->first } ) {
+        $o->next( $o->first->linklist );
+        for ( my $kid = $o->first; $$kid; $kid = $kid->sibling ) {
+            if ( ${ $kid->sibling } ) {
+                $kid->next( $kid->sibling->linklist );
+            }
+            else {
                 $kid->next($o);
             }
         }
-    } else {
+    }
+    else {
         $o->next($o);
     }
     $o->clean;
     return $o->next;
 }
 
-sub B::OP::append_elem {
-    my ($class, $type, $first, $last) = @_;
-    return $last unless $first and $$first;
-    return $first unless $last and $$last;
-    
-    if ($first->type() != $type or 
-        ($type == OP_LIST and ($first->flags & OPf_PARENS))) {
-	return B::LISTOP->new($type,0,$first,$last)
+sub append_elem {
+    my ( $class, $type, $first, $last ) = @_;
+    return $last  unless $first and $$first;
+    return $first unless $last  and $$last;
+
+    if ( $first->type() != $type
+        or ( $type == OP_LIST and ( $first->flags & OPf_PARENS ) ) )
+    {
+        return B::LISTOP->new( $type, 0, $first, $last );
     }
-    
-    if ($first->flags() & OPf_KIDS) {
-        
+
+    if ( $first->flags() & OPf_KIDS ) {
+
         $first->last->sibling($last);
-    } else {
-        $first->flags($first->flags | OPf_KIDS);
+    }
+    else {
+        $first->flags( $first->flags | OPf_KIDS );
         $first->first($last);
     }
     $first->last($last);
     return $first;
 }
 
-sub B::OP::prepend_elem {
-    my ($class, $type, $first, $last) = @_;
-    if ($last->type() != $type) {
-        return B::LISTOP->new($type,0,$first,$last)
+sub prepend_elem {
+    my ( $class, $type, $first, $last ) = @_;
+    if ( $last->type() != $type ) {
+        return B::LISTOP->new( $type, 0, $first, $last );
     }
-    
-    if ($type == OP_LIST) {
-        $first->sibling($last->first->sibling);
+
+    if ( $type == OP_LIST ) {
+        $first->sibling( $last->first->sibling );
         $last->first->sibling($first);
-        $last->flags($last->flags & ~OPf_PARENS)
-            unless ($first->flags & OPf_PARENS);
-    } else {
-        unless ($last->flags & OPf_KIDS) {
+        $last->flags( $last->flags & ~OPf_PARENS )
+            unless ( $first->flags & OPf_PARENS );
+    }
+    else {
+        unless ( $last->flags & OPf_KIDS ) {
             $last->last($first);
-            $last->flags($last->flags | OPf_KIDS);
+            $last->flags( $last->flags | OPf_KIDS );
         }
-        $first->sibling($last->first);
+        $first->sibling( $last->first );
         $last->first($first);
     }
-    $last->flags($last->flags | OPf_KIDS);
-    return $last; # I cannot believe this works.
+    $last->flags( $last->flags | OPf_KIDS );
+    return $last;    # I cannot believe this works.
 }
 
-sub B::OP::scope {
+sub scope {
     my $o = shift;
     return unless $o and $$o;
-    if ($o->flags & OPf_PARENS) {
-        $o = B::OP->prepend_elem(
-            B::opnumber("lineseq"),
-            B::OP->new("enter", 0),
-            $o);
-        $o->type(B::opnumber("leave"));
-    } else {
-        if ($o->type == B::opnumber("lineseq")) {
+    if ( $o->flags & OPf_PARENS ) {
+        $o = B::OP->prepend_elem( B::opnumber("lineseq"),
+            B::OP->new( "enter", 0 ), $o );
+        $o->type( B::opnumber("leave") );
+    }
+    else {
+        if ( $o->type == B::opnumber("lineseq") ) {
             my $kid;
-            $o->type(B::opnumber("scope"));
-            $kid=$o->first;
+            $o->type( B::opnumber("scope") );
+            $kid = $o->first;
             die "This probably shouldn't happen (\$kid->null)\n"
-                if ($kid->type == B::opnumber("nextstate") 
-                or $kid->type == B::opnumber("dbstate"))
-        } else {
-            $o = B::LISTOP->new("scope", 0, $o, undef);
+                if ( $kid->type == B::opnumber("nextstate")
+                or $kid->type == B::opnumber("dbstate") );
+        }
+        else {
+            $o = B::LISTOP->new( "scope", 0, $o, undef );
         }
     }
     return ($o);
 }
-
 
 1;
 __END__
@@ -250,6 +260,14 @@ None.
 
 Simon Cozens, C<simon@cpan.org>
 (Who else?)
+
+=head1 MAINTAINERS
+
+This is just a list of people who have submitted patches to the
+module. To find someone to actually maintain this, please try
+contacting perl5-porters.
+
+Josh ben Jore, Michael Schwern, Jim Cromie, Scott Walters.
 
 =head1 SEE ALSO
 

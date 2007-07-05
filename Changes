@@ -1,8 +1,25 @@
 Revision history for Perl extension B::Generate.
 
-1.06_2  Sat Nov 11 22:27:55 CST 2006
-    * Made work on 5.8 with ithreads compiled in
-    - Converted tests to Test::More
+1.09
+  - Merged distributions:
+    - S/SW/SWALTERS/B-Generate-1.06_1.tar.gz
+      - Removed ppaddr setting for OP_LIST
+      - Call Perl_fold_constants instead of fold_constants
+    - M/MS/MSCHWERN/B-Generate-1.06_2.tar.gz
+      - Awesome!
+      - fold_constants is called w/ thread context
+    - J/JJ/JJORE/B-Generate-1.07.tar.gz
+      - Populates specialsv_list
+    - J/JJ/JJORE/B-Generate-1.08.tar.gz
+      - Nothing interesting, apparently.
+    - RT #4747:
+      - changes to compile for 5.8.1+ by Jim Cromie <jcromie@cpan.org>
+        - altered Build.PL to add extra_compiler_flags when building for 5.8.x,
+          ie: -DPERL_CUSTOM_OPS -DPERL_CUSTOM_OPCODES
+          these didnt work for me under 5.6.x
+        - silenced redefined warnings with $SIG{__WARN__}
+        - various XS tweaks: casts, aTHX_, and Perl_ prefix on symbols
+        - various pm tweaks to silence warnings
 
 1.06 Sun Jul 28 18:43:06 CEST 2002
     - Added support for changing PV in SvPV

@@ -1,9 +1,9 @@
 Changes
 lib/B/Generate.pm
 lib/B/Generate.xs
+META.yml
 MANIFEST
 typemap
 Makefile.PL
 Build.PL
 t/basic.t
-META.yml

@@ -1,5 +1,9 @@
 Revision history for Perl extension B::Generate.
 
+1.10
+  - License clarification. B::Generate is available under the same
+    terms as perl. Dist now includes copy of Artistic and GPL licenses.
+
 1.09
   - Merged distributions:
     - S/SW/SWALTERS/B-Generate-1.06_1.tar.gz

@@ -8,7 +8,7 @@ use B;
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.09';
+$VERSION = '1.10';
 
 {
     # 'no warnings' does not work.
@@ -268,6 +268,11 @@ module. To find someone to actually maintain this, please try
 contacting perl5-porters.
 
 Josh ben Jore, Michael Schwern, Jim Cromie, Scott Walters.
+
+=head1 LICENSE
+
+This module is available under the same licences as perl, the Artistic
+license and the GPL.
 
 =head1 SEE ALSO
 

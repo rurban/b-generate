@@ -204,7 +204,7 @@ static I32
 op_name_to_num(SV * name)
 {
     dTHX;
-    char *s;
+    char const *s;
     char *wanted = SvPV_nolen(name);
     int i =0;
     int topop = OP_max;

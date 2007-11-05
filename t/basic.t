@@ -12,7 +12,7 @@ CHECK {
     for ($x = B::main_start; $x->type != B::opnumber("add"); $x=$x->next){ # Find "add"
         $y=$x;  # $y is the op before "add"
     };
-    $z = new B::BINOP("subtract",0,$x->first, $x->last); # Create replacement "subtract"
+    $z = B::BINOP->new("subtract",0,$x->first, $x->last); # Create replacement "subtract"
 
     $z->next($x->next); # Copy add's "next" across.
     $y->next($z);       # Tell $y to point to replacement op.
@@ -81,7 +81,8 @@ sub foo::baz {
     is( "lead", "gold" );
 }
 
-{
+SKIP: {
+    skip( q(->seq was removed for 5.10), 1 ) if $] >= 5.010;
     my $x = svref_2object(\&foo::baz);
     my $op = $x->START;
     my $y = $op->find_cv();

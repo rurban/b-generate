@@ -8,7 +8,7 @@ use B;
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.10';
+$VERSION = '1.11';
 
 {
     # 'no warnings' does not work.
@@ -267,7 +267,7 @@ This is just a list of people who have submitted patches to the
 module. To find someone to actually maintain this, please try
 contacting perl5-porters.
 
-Josh ben Jore, Michael Schwern, Jim Cromie, Scott Walters.
+Josh Jore, Michael Schwern, Jim Cromie, Scott Walters.
 
 =head1 LICENSE
 

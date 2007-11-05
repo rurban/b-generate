@@ -4,7 +4,7 @@ use Module::Build;
 my %newTweaks;
 if ( $] >= 5.008 ) {
     $newTweaks{extra_compiler_flags}
-        = '-DPERL_CUSTOM_OPS -DPERL_CUSTOM_OPCODES';
+        = '-DPERL_CUSTOM_OPS -DPERL_CUSTOM_OPCODES -g';
 }
 
 my $class = Module::Build->subclass(

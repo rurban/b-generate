@@ -154,8 +154,8 @@ find_cv_by_root(OP* o) {
              CvROOT(sv) == root
              ) {
             cv = (CV*) sv;
-          } else if(SvTYPE(sv) == SVt_PVGV && GvGP(sv) &&
-                    GvCV(sv) && !CvXSUB(GvCV(sv)) &&
+          } else if( SvTYPE(sv) == SVt_PVGV && GvGP(sv) &&
+                    GvCV(sv) && !SvVALID(sv) && !CvXSUB(GvCV(sv)) &&
                     CvROOT(GvCV(sv)) == root)
                      {
             cv = (CV*) GvCV(sv);
@@ -570,6 +570,8 @@ OP_type(o, ...)
     OUTPUT:
         RETVAL
 
+#if PERL_VERSION < 10
+
 U16
 OP_seq(o, ...)
         B::OP           o
@@ -579,6 +581,8 @@ OP_seq(o, ...)
         RETVAL = o->op_seq;
     OUTPUT:
         RETVAL
+
+#endif
 
 U8
 OP_flags(o, ...)
@@ -1010,13 +1014,20 @@ LOGOP_other(o,...)
     OUTPUT:
         RETVAL
 
+#if PERL_VERSION < 10
+
 #define PMOP_pmreplroot(o)      o->op_pmreplroot
 #define PMOP_pmnext(o)          o->op_pmnext
-#define PMOP_pmregexp(o)        o->op_pmregexp
-#define PMOP_pmflags(o)         o->op_pmflags
 #define PMOP_pmpermflags(o)     o->op_pmpermflags
 
+#endif 
+
+#define PMOP_pmregexp(o)        o->op_pmregexp
+#define PMOP_pmflags(o)         o->op_pmflags
+
 MODULE = B::Generate    PACKAGE = B::PMOP               PREFIX = PMOP_
+
+#if PERL_VERSION < 10
 
 void
 PMOP_pmreplroot(o)
@@ -1056,11 +1067,13 @@ PMOP_pmnext(o, ...)
         RETVAL
 
 U16
-PMOP_pmflags(o)
+PMOP_pmpermflags(o)
         B::PMOP         o
 
+#endif
+
 U16
-PMOP_pmpermflags(o)
+PMOP_pmflags(o)
         B::PMOP         o
 
 void
@@ -1217,7 +1230,9 @@ LOOP_lastop(o, ...)
 #define COP_stash(o)    CopSTASH(o)
 #define COP_file(o)     CopFILE(o)
 #define COP_cop_seq(o)  o->cop_seq
+#if PERL_VERSION < 10
 #define COP_arybase(o)  o->cop_arybase
+#endif
 #define COP_line(o)     CopLINE(o)
 #define COP_warnings(o) o->cop_warnings
 
@@ -1244,13 +1259,26 @@ U32
 COP_cop_seq(o)
         B::COP  o
 
+#if PERL_VERSION < 10
+
 I32
 COP_arybase(o)
         B::COP  o
 
+#endif
+
 U16
 COP_line(o)
         B::COP  o
+
+=pod
+
+/* TODO: This throws a warning that cop_warnings is (STRLEN*)
+   while I am casting to (SV*). The typedef converts special
+   values of (STRLEN*) into SV objects. Hope the initial pointer
+   casting isn't a problem. */
+
+=cut
 
 B::SV
 COP_warnings(o)
@@ -1373,6 +1401,8 @@ BOOT:
     specialsv_list[1] = &PL_sv_undef;
     specialsv_list[2] = &PL_sv_yes;
     specialsv_list[3] = &PL_sv_no;
-    specialsv_list[4] = pWARN_ALL;
-    specialsv_list[5] = pWARN_NONE;
-    specialsv_list[6] = pWARN_STD;
+    /* These are supposed to be (STRLEN*) so I cheat. Hope
+       it doesn't matter. */
+    specialsv_list[4] = (SV*)pWARN_ALL;
+    specialsv_list[5] = (SV*)pWARN_NONE;
+    specialsv_list[6] = (SV*)pWARN_STD;

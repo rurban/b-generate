@@ -1,5 +1,15 @@
 Revision history for Perl extension B::Generate.
 
+1.12
+  _01 - (against 5.10)
+      - fixed an assertion error re GV
+      - silenced a const warning (another remains in COP_warnings)
+  _02 - ifdef'd PMOP_precomp, removed in 5.11
+  _03 - 5.11 version of COP_warnings
+      
+1.11
+  - odd, nothing here, fix later
+
 1.10
   - License clarification. B::Generate is available under the same
     terms as perl. Dist now includes copy of Artistic and GPL licenses.

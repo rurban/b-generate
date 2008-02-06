@@ -154,7 +154,8 @@ find_cv_by_root(OP* o) {
              CvROOT(sv) == root
              ) {
             cv = (CV*) sv;
-          } else if( SvTYPE(sv) == SVt_PVGV && GvGP(sv) &&
+          } else if( SvTYPE(sv) == SVt_PVGV && 
+	  	    isGV_with_GP(sv) && GvGP(sv) &&
                     GvCV(sv) && !SvVALID(sv) && !CvXSUB(GvCV(sv)) &&
                     CvROOT(GvCV(sv)) == root)
                      {
@@ -500,7 +501,7 @@ OP_ppaddr(o, ...)
     OUTPUT:
     RETVAL
 
-char *
+const char *
 OP_desc(o)
         B::OP           o
 
@@ -1076,6 +1077,8 @@ U16
 PMOP_pmflags(o)
         B::PMOP         o
 
+#if PERL_VERSION < 11
+
 void
 PMOP_precomp(o)
         B::PMOP         o
@@ -1085,6 +1088,8 @@ PMOP_precomp(o)
         rx = PM_GETRE(o);
         if (rx)
             sv_setpvn(ST(0), rx->precomp, rx->prelen);
+
+#endif
 
 #define SVOP_sv(o)     (cSVOPo_sv)
 #define SVOP_gv(o)     ((GV*)cSVOPo_sv)
@@ -1276,13 +1281,30 @@ COP_line(o)
 /* TODO: This throws a warning that cop_warnings is (STRLEN*)
    while I am casting to (SV*). The typedef converts special
    values of (STRLEN*) into SV objects. Hope the initial pointer
-   casting isn't a problem. */
+   casting isn't a problem.
+
+   New code for 5.11 is loosely based upon patch 27786 changes to
+   B.xs, but avoids calling the static function added there.
+   XXX: maybe de-static that function
+ */
 
 =cut
+
+#if PERL_VERSION < 11
 
 B::SV
 COP_warnings(o)
         B::COP  o
+
+#else
+
+B::SV
+COP_warnings(o)
+        B::COP  o
+    CODE:
+	RETVAL = newSVpv(o->cop_warnings, 0);
+
+#endif
 
 B::COP
 COP_new(class, flags, name, sv_first)

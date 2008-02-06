@@ -155,7 +155,10 @@ find_cv_by_root(OP* o) {
              ) {
             cv = (CV*) sv;
           } else if( SvTYPE(sv) == SVt_PVGV && 
-	  	    isGV_with_GP(sv) && GvGP(sv) &&
+#if PERL_VERSION >= 10
+	  	    isGV_with_GP(sv) && 
+#endif
+		    GvGP(sv) &&
                     GvCV(sv) && !SvVALID(sv) && !CvXSUB(GvCV(sv)) &&
                     CvROOT(GvCV(sv)) == root)
                      {

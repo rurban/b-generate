@@ -8,7 +8,7 @@ use B;
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.12_04';
+$VERSION = '1.12_05';
 
 {
     # 'no warnings' does not work.
@@ -20,7 +20,7 @@ $VERSION = '1.12_04';
 }
 
 package B::OP;
-use constant OP_LIST    => 141;    # MUST FIX CONSTANTS.
+use constant OP_LIST    => B::opnumber("list");    # MUST FIX CONSTANTS.
 use constant OPf_PARENS => 8;      # *MUST* *FIX* *CONSTANTS*.
 use constant OPf_KIDS   => 4;
 

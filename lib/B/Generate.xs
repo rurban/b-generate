@@ -1,3 +1,4 @@
+/* -*- C -*- */
 #define PERL_NO_GET_CONTEXT
 #include "EXTERN.h"
 #include "perl.h"
@@ -228,7 +229,10 @@ op_name_to_num(SV * name)
     if (PL_custom_op_names) {
         HE* ent;
         SV* value;
-        /* This is sort of a hv_exists, backwards */
+
+        /* This is sort of a hv_exists, backwards - since custom-ops
+	   are stored using their pp-addr as key, we must scan the
+	   values */
         (void)hv_iterinit(PL_custom_op_names);
         while ((ent = hv_iternext(PL_custom_op_names))) {
             if (strEQ(SvPV_nolen(hv_iterval(PL_custom_op_names,ent)),wanted))
@@ -1301,6 +1305,21 @@ COP_warnings(o)
 
 #else
 
+void
+COP_warnings(o)
+        B::COP  o
+
+#endif
+
+=pod
+
+/*
+
+   another go: with blead@33056, get another arg2 mismatch to newSVpv
+   in this code.  Turns out that COP_warnings(o) returns void now.
+   So I hope to comment out this XS, and get B's version instead.
+   sofar sogood.
+
 B::SV
 COP_warnings(o)
         B::COP  o
@@ -1308,6 +1327,11 @@ COP_warnings(o)
 	RETVAL = newSVpv(o->cop_warnings, 0);
 
 #endif
+
+
+*/
+
+=cut
 
 B::COP
 COP_new(class, flags, name, sv_first)

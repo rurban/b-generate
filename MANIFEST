@@ -8,4 +8,9 @@ Makefile.PL
 MANIFEST
 META.yml
 t/basic.t
+BTest.pm
+t/inspect-btest.t
+t/inspect-this.t
+t/op_list.t
+t/op_list_bgen.t
 typemap

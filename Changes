@@ -7,7 +7,14 @@ Revision history for Perl extension B::Generate.
   _02 - ifdef'd PMOP_precomp, removed in 5.11
   _03 - add a call to isGV_with_GP, 5.11 version of COP_warnings (released)
   _04 - isGV_with_GP is 5.10 only
-      
+  _0501
+      - reduced dependency on B => 1.09, matching latest available
+      - added broken/failing t/synopsis.t - very raw, moving ahead
+      - started build.nt - attempt to loop over opnames and construct ops
+  _0502
+      - added BTest.pm and several files using it
+
+
 1.11 - (releaed by Josh Ben Jore)
   - rt#29257 - patches from Reini Urban & Jim Cromie
 

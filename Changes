@@ -2,18 +2,21 @@ Revision history for Perl extension B::Generate.
 
 1.12
   _01 - (against 5.10)
-      - fixed an assertion error re GV
+      - fixed a GV assertion error by adding isGV_with_GP
       - silenced a const warning (another remains in COP_warnings)
   _02 - ifdef'd PMOP_precomp, removed in 5.11
   _03 - add a call to isGV_with_GP, 5.11 version of COP_warnings (released)
   _04 - isGV_with_GP is 5.10 only
   _0501
-      - reduced dependency on B => 1.09, matching latest available
+      - reduced dependency on B => 1.09
       - added broken/failing t/synopsis.t - very raw, moving ahead
       - started build.nt - attempt to loop over opnames and construct ops
   _0502
       - added BTest.pm and several files using it
-
+  _06 - "duh, thanks CPANTS" release
+      - undo creeping 'feature'isms in tests (5.8 friendly)
+      - static renderings dont port, drop test_all_ops in inspect-btest 
+      - drop filegv from nextstate tests (caused uninit-strings in prints)
 
 1.11 - (releaed by Josh Ben Jore)
   - rt#29257 - patches from Reini Urban & Jim Cromie

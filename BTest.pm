@@ -7,11 +7,9 @@
 # goal is to write a main thats simple enough to inspect, then do so
 # using B-Gen (B too?), and verify various op details
 
-use feature ':5.10';
 use B;
 use B::Concise;
-
-use Data::Dumper;
+use Devel::Peek;
 
 my %clsmap =
     (
@@ -32,111 +30,6 @@ BEGIN {
     print "$_ => $clsmap{$_}\n" for keys %clsmap;
 }
 
-sub parse_bcons {
-    # digest B::Concise,-exec line, populate \%args with tests
-    my $tests = shift;
-    
-    my $line = $tests->{bcons};
-    my ($cls, $nm, $arg, $flg, $to);
-
-    # $DB::single = 1 if $line =~ /const/ and $line =~ /leave/;
-
-    $tests->{to} = $1	if $line =~ s/\s*->(.*)$//;
-    $tests->{arg} = $1	if $line =~ s/[\(\[](.+)[\]\)]//;
-
-    # parse normalized line now
-    (undef, $cls, $long, $flg) = split /\s+/, $line;
-
-    $cls =~ /<(.)>/ && do {
-	# convert <.> into 'B::*OP'
-	$tests->{ref} = 'B::'.$clsmap{$1}
-    };
-    $long =~ s/^(\w+)// && do {
-	$tests->{name}	//= $1;
-	$tests->{label}	//= $1;
-	$tests->{arg}	//= $long;
-    };
-    
-    # parse pub-flags
-    if ($flg) {
-	my ($pub,$priv) = split m|/|, $flg;
-	$_ = $pub;
-	/v/  && do { $tests->{flags} |= &B::OPf_WANT_VOID };
-	/s/  && do { $tests->{flags} |= &B::OPf_WANT_SCALAR };
-	/l/  && do { $tests->{flags} |= &B::OPf_WANT_LIST };
-	/K/  && do { $tests->{flags} |= &B::OPf_KIDS };
-	/P/  && do { $tests->{flags} |= &B::OPf_PARENS };
-	/R/  && do { $tests->{flags} |= &B::OPf_REF };
-	/S/  && do { $tests->{flags} |= &B::OPf_STACKED };
-	/M/  && do { $tests->{flags} |= &B::OPf_MOD };
-	/\*/ && do { $tests->{flags} |= &B::OPf_SPECIAL };
-    }
-    # private flags are too numerous
-    # B::Concise %priv has the info needed to do this, but diminishing returns
-
-    # parse '(arg)'
-    if ($tests->{name} =~ /(next|db)state/) {
-
-	# allow both 'nextstate' & 'dbstate'
-	$tests->{name}	= qr/(next|db)state/;
-	$tests->{label}	= 'nextstate';
-	$tests->{type}	= [ B::opnumber('nextstate'),
-			    B::opnumber('dbstate') ];
-
-	# parse arg, collect more testable info
-	my ($pkg, $num, $prog, $ln) = split /(?:\s+|:)/, $tests->{arg};
-	$tests->{file} = qr/$prog/;
-	$tests->{line} = $ln;
-	$tests->{filegv} = undef;	# no value constraint, just run it
-    }
-    elsif ($tests->{arg}) {
-	# dig into args (for const ops)
-	my ($t,$v) = split /\s+/, $tests->{arg};
-
-	# behavior expected apriori
-	# $tests->{sv} //= sub { "->$t \"".(shift)->$t() .'"' };
-
-	$_ = $t;
-
-	# anomalous IV,NV behavior
-	# ie mismatch between bcons arg and tested obj
-	
-	/IV$/ && do {
-	    $tests->{sv} //= sub { "->NV \"".(shift)->NV() .'"' };
-	};
-	/NV$/ && do {
-	    $tests->{sv} //= sub { "->NV \"".(shift)->NV() .'"' };
-	};
-	/PV$/ && do {
-	    $tests->{sv} //=
-		sub {
-		    my $sv = shift;
-		    my $res;
-		    ok($res = $sv->PV, "->PV $res");
-		    ok($res = $sv->PVX, "->PVX $res");
-		    ok($res = $sv->CUR, "->CUR $res");
-		    ok($res = $sv->LEN, "->LEN $res");
-		    1;
-	    };
-	};
-	/\*(w+)$/ && do {
-	    diag ("found gv[$1]\n");
-	    # $tests->{sv} //= sub { "->NV \"".(shift)->NV() .'"' };
-	};
-	/t(\d+)/ && do {
-	    $tests->{targ} //= $1;
-	};
-    }
-    $tests->{type} //= B::opnumber($tests->{name});
-    
-    # later, we'll emit the low-level code
-    if (0) {
-	print "# auto-gen'd, needs massaging\n";
-	print "testop(\$op,\n";
-	print "\t $_ \t=> '$tests->{$_}',\n" for sort keys %$tests;
-	print "\t);\n";
-    }
-}
 
 sub testop {
     # test that $op can execute methods given as keys in %args.
@@ -150,7 +43,16 @@ sub testop {
     } else {
 	warn "things depend on having B::Concise,-exec line";
     }
-
+    
+    # later, we'll emit the low-level code
+    if ($args{emit}) {
+	diag( "auto-gen'd, needs massaging\n",
+	      "testop(\$op,\n",
+	      map("\t $_ \t=> '$args{$_}',\n", 
+		  sort keys %args),
+	      "\t);\n");
+    }
+    
     my $label = $args{label} || $args{name};
 
     if ($args{ref}) {
@@ -160,7 +62,7 @@ sub testop {
 	ok(1, "is a " . $op); # ref $op);
     }
 
-    delete @args{qw/ arg bcons ref pass label to class /};
+    delete @args{qw/ arg bcons ref pass label to class emit /};
 
     # each key is a method on $op, so run them,
     # test retval against key's value (and type)
@@ -197,26 +99,6 @@ sub testop {
 	if (my $do = $op->can($k)) {
 	    ok ($op->$do, "$label->$k: ". $op->$do);
 	}
-    }
-}
-
-sub test_all_ops {
-    # given a B::Concise,-exec rendering,
-    # and array of ops it pertains to,
-    # test each using testop()
-
-    my ($ops, $render) = @_;
-
-    unless (ref $render eq 'ARRAY') {
-	$render = [ grep { ! / goto /} split /\n/, $render ];
-    }
-    #warn "mismatch" if @$ops != @$render;
-
-    while (1) {
-	my $op = shift @$ops;
-	my $ln = shift @$render;
-	last unless $op and $ln;
-	testop($op, bcons => $ln);
     }
 }
 
@@ -259,8 +141,114 @@ sub test_self_ops {
 	# eventually dies on B::NULL
     };
 
-    test_all_ops(\@exe, \@render); 
+    while (1) {
+	my $op = shift @exe;
+	my $ln = shift @render;
+	last unless $op and $ln;
+	testop($op, bcons => $ln, emit => $args{-v});
+    }
 }
+
+
+sub istrue { (shift) }
+
+sub parse_bcons {
+    # digest B::Concise,-exec line, populate \%args with tests
+    my $tests = shift;
+    
+    my $line = $tests->{bcons};
+    my ($cls, $nm, $arg, $flg, $to);
+
+    $tests->{to} = $1	if $line =~ s/\s*->(.*)$//;
+    $tests->{arg} = $1	if $line =~ s/[\(\[](.+)[\]\)]//;
+
+    # parse normalized line now
+    (undef, $cls, $long, $flg) = split /\s+/, $line;
+
+    $cls =~ /<(.)>/ && do {
+	# convert <.> into 'B::*OP'
+	$tests->{ref} = 'B::'.$clsmap{$1}
+    };
+    $long =~ s/^(\w+)// && do {
+	$tests->{name}	//= $1;
+	$tests->{label}	//= $1;
+	$tests->{arg}	//= $long;
+    };
+    
+    # parse pub-flags
+    if ($flg) {
+	my ($pub,$priv) = split m|/|, $flg;
+	$_ = $pub;
+	/v/  && do { $tests->{flags} |= &B::OPf_WANT_VOID };
+	/s/  && do { $tests->{flags} |= &B::OPf_WANT_SCALAR };
+	/l/  && do { $tests->{flags} |= &B::OPf_WANT_LIST };
+	/K/  && do { $tests->{flags} |= &B::OPf_KIDS };
+	/P/  && do { $tests->{flags} |= &B::OPf_PARENS };
+	/R/  && do { $tests->{flags} |= &B::OPf_REF };
+	/S/  && do { $tests->{flags} |= &B::OPf_STACKED };
+	/M/  && do { $tests->{flags} |= &B::OPf_MOD };
+	/\*/ && do { $tests->{flags} |= &B::OPf_SPECIAL };
+
+	# check truth of privates (simple)
+	$tests->{private} = \&istrue if $priv;
+    }
+    # parse '(arg)'
+    if ($tests->{name} =~ /(next|db)state/) {
+
+	# allow both 'nextstate' & 'dbstate'
+	$tests->{name}	= qr/(next|db)state/;
+	$tests->{label}	= 'nextstate';
+	$tests->{type}	= [ B::opnumber('nextstate'),
+			    B::opnumber('dbstate') ];
+
+	# parse arg, collect more testable info
+	my ($pkg, $num, $prog, $ln) = split /(?:\s+|:)/, $tests->{arg};
+	$tests->{file} = qr/$prog/;
+	$tests->{line} = $ln;
+	# $tests->{filegv} = undef;	# no value constraint, just run it
+    }
+    elsif ($tests->{arg}) {
+	# dig into args (for const ops)
+	my ($t,$v) = split /\s+/, $tests->{arg};
+
+	# behavior expected apriori
+	# $tests->{sv} //= sub { "->$t \"".(shift)->$t() .'"' };
+
+	$_ = $t;
+
+	# anomalous IV,NV behavior
+	# ie mismatch between bcons arg and tested obj
+	
+	/IV$/ && do {
+	    $tests->{sv} //= sub { "->NV \"".(shift)->NV() .'"' };
+	};
+	/NV$/ && do {
+	    $tests->{sv} //= sub { "->NV \"".(shift)->NV() .'"' };
+	};
+	/PV$/ && do {
+	    $tests->{sv} //=
+		sub {
+		    my $sv = shift;
+		    my $res;
+		    ok($res = $sv->PV, "->PV $res");
+		    ok($res = $sv->PVX, "->PVX $res");
+		    ok($res = $sv->CUR, "->CUR $res");
+		    ok($res = $sv->LEN, "->LEN $res");
+		    Dump($sv) unless $res;
+		    1;
+	    };
+	};
+	/\*(w+)$/ && do {
+	    diag ("found gv[$1]\n");
+	    # $tests->{sv} //= sub { "->NV \"".(shift)->NV() .'"' };
+	};
+	/t(\d+)/ && do {
+	    $tests->{targ} //= $1;
+	};
+    }
+    $tests->{type} //= B::opnumber($tests->{name});
+}
+
 
 1;
 
@@ -302,11 +290,11 @@ BTest's goals are to make -
     - the tests look like specifications
     - tests are extensible
     - it easier to learn how to use B well
-    - framework gives place to hang further knowledge
+    - framework gives place to hang further knowledge/kludges
 
 =head1 DESCRIPTION
 
-BTest has a 2 level API which gives simplicity (test_all_ops) and
+BTest has a 2 level API which gives simplicity (test_self_ops) and
 power (testop) in support of testing the B module.
 
 =head2 test_self_ops(%args)

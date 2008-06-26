@@ -123,6 +123,7 @@ find_cv_by_root(OP* o) {
   
   cached = hv_fetch_ent(root_cache, key, 0, 0);
   if(cached) {
+    SvREFCNT_dec(key);
     return HeVAL(cached);
   }
   
@@ -176,6 +177,7 @@ find_cv_by_root(OP* o) {
     cached = hv_store_ent(root_cache, key, newRV((SV*)cv), 0);
   }
 
+  SvREFCNT_dec(key);
   return (SV*) HeVAL(cached);
 }
 

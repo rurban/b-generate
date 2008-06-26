@@ -17,6 +17,7 @@ Revision history for Perl extension B::Generate.
       - undo creeping 'feature'isms in tests (5.8 friendly)
       - static renderings dont port, drop test_all_ops in inspect-btest 
       - drop filegv from nextstate tests (caused uninit-strings in prints)
+  _07 - fixed a leak in find_cv_by_root()
 
 1.11 - (releaed by Josh Ben Jore)
   - rt#29257 - patches from Reini Urban & Jim Cromie

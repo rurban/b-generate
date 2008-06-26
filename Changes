@@ -17,7 +17,15 @@ Revision history for Perl extension B::Generate.
       - undo creeping 'feature'isms in tests (5.8 friendly)
       - static renderings dont port, drop test_all_ops in inspect-btest 
       - drop filegv from nextstate tests (caused uninit-strings in prints)
-  _07 - fixed a leak in find_cv_by_root()
+  _07 Anton Berezin
+      - fixed a leak in find_cv_by_root()
+  _08 Reini Urban
+      - cop_label now in hints_hash (5.11 Change #33656)
+      - silence use64bitint warnings
+      - fix t/inspect-btest.t test count
+      - fix t/inspect-this.t not ok 568 - ->LEN 0.
+	skip all PV->LEN tests >= 5.10
+      - removed //= from BTest to support 5.8 and older
 
 1.11 - (releaed by Josh Ben Jore)
   - rt#29257 - patches from Reini Urban & Jim Cromie

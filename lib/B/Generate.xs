@@ -5,6 +5,7 @@
 #include "perlapi.h"
 #include "XSUB.h"
 
+
 #ifdef PERL_OBJECT
 #undef PL_op_name
 #undef PL_opargs 
@@ -85,7 +86,7 @@ set_active_sub(SV *sv)
     AV* padlist; 
     SV** svp;
     /* dTHX; */
-    //      sv_dump(SvRV(sv));
+    /* sv_dump(SvRV(sv)); */
     padlist = CvPADLIST(SvRV(sv));
     if(!padlist) {
         dTHX;
@@ -106,7 +107,7 @@ find_cv_by_root(OP* o) {
 
   if(PL_compcv && SvTYPE(PL_compcv) == SVt_PVCV &&
         !PL_eval_root) {
-    //    printf("Compcv\n");
+      /*  printf("Compcv\n"); */
     if(SvROK(PL_compcv))
        sv_dump(SvRV(PL_compcv));
     return newRV((SV*)PL_compcv);
@@ -262,7 +263,7 @@ custom_op_ppaddr(char *name)
     (void)hv_iterinit(PL_custom_op_names);
     while ((ent = hv_iternext(PL_custom_op_names))) {
         if (strEQ(SvPV_nolen(hv_iterval(PL_custom_op_names,ent)),name))
-            return (void*)SvIV(hv_iterkeysv(ent));
+            return INT2PTR(void*,SvIV(hv_iterkeysv(ent)));
     }
 
     return 0;
@@ -274,7 +275,7 @@ cc_opclass(pTHX_ OP *o)
 {
     if (!o)
         return OPc_NULL;
-    //    op_dump(o);
+    /* op_dump(o); */
     if (o->op_type == 0)
         return (o->op_flags & OPf_KIDS) ? OPc_UNOP : OPc_BASEOP;
 
@@ -505,7 +506,7 @@ OP_ppaddr(o, ...)
         B::OP           o
     CODE:
         if (items > 1)
-            o->op_ppaddr = (void*)SvIV(ST(1));
+            o->op_ppaddr = INT2PTR(void*,SvIV(ST(1)));
         RETVAL = PTR2IV((void*)(o->op_ppaddr));
     OUTPUT:
     RETVAL
@@ -530,13 +531,13 @@ OP_targ(o, ...)
             I32 old_comppad_name_fill = PL_comppad_name_fill;
             I32 old_min_intro_pending = PL_min_intro_pending;
             I32 old_max_intro_pending = PL_max_intro_pending;
-            // int old_cv_has_eval       = PL_cv_has_eval;
+            /* int old_cv_has_eval       = PL_cv_has_eval; */
             I32 old_pad_reset_pending = PL_pad_reset_pending;
             SV **old_curpad            = PL_curpad;
             AV *old_comppad           = PL_comppad;
             AV *old_comppad_name      = PL_comppad_name;
 
-            // PTR2UV
+            /* PTR2UV */
 
             PL_comppad_name      = (AV*)(*av_fetch(padlist, 0, FALSE));
             PL_comppad           = (AV*)(*av_fetch(padlist, 1, FALSE));
@@ -544,10 +545,12 @@ OP_targ(o, ...)
 
             PL_padix             = AvFILLp(PL_comppad_name);
             PL_pad_reset_pending = 0;
-            // <medwards> PL_comppad_name_fill appears irrelevant as long as you stick to pad_alloc, pad_swipe, pad_free.
-            // PL_comppad_name_fill = 0;
-            // PL_min_intro_pending = 0;
-            // PL_cv_has_eval       = 0;
+            /* <medwards> PL_comppad_name_fill appears irrelevant as long as you 
+	       stick to pad_alloc, pad_swipe, pad_free.
+	     * PL_comppad_name_fill = 0;
+	     * PL_min_intro_pending = 0;
+	     * PL_cv_has_eval       = 0;
+	     */
 
             o->op_targ = Perl_pad_alloc(aTHX_ 0, SVs_PADTMP);
 
@@ -555,7 +558,7 @@ OP_targ(o, ...)
             PL_comppad_name_fill = old_comppad_name_fill;
             PL_min_intro_pending = old_min_intro_pending;
             PL_max_intro_pending = old_max_intro_pending;
-            // PL_cv_has_eval       = old_cv_has_eval;
+            /* PL_cv_has_eval       = old_cv_has_eval; */
             PL_pad_reset_pending = old_pad_reset_pending;
             PL_curpad            = old_curpad;
             PL_comppad           = old_comppad;
@@ -1163,8 +1166,8 @@ SVOP_new(class, type, flags, sv)
         if (typenum == OP_CUSTOM)
             o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
 #endif
-            //PL_curpad = sparepad;
-            ST(0) = sv_newmortal();
+	/* PL_curpad = sparepad; */
+        ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::SVOP"), PTR2IV(o));
         PL_op = saveop;
 
@@ -1239,7 +1242,9 @@ LOOP_lastop(o, ...)
     OUTPUT:
         RETVAL
 
+#if PERL_VERSION < 11
 #define COP_label(o)    o->cop_label
+#endif
 #define COP_stashpv(o)  CopSTASHPV(o)
 #define COP_stash(o)    CopSTASH(o)
 #define COP_file(o)     CopFILE(o)
@@ -1253,9 +1258,13 @@ LOOP_lastop(o, ...)
 MODULE = B::Generate    PACKAGE = B::COP                PREFIX = COP_
 
 
+#if PERL_VERSION < 11
+
 char *
 COP_label(o)
         B::COP  o
+
+#endif
 
 char *
 COP_stashpv(o)

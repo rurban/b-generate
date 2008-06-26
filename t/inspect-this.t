@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More tests => 655;
+use Test::More tests => $] < 5.010 ? 659 : 648; # skip PV->LEN tests on 5.10
 use_ok 'B';
 
 #use_ok 'B::Generate'; # cannot use here, due to clash with B::Concise

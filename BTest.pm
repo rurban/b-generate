@@ -18,10 +18,10 @@ my %clsmap =
      '2' =>	'BINOP',
      '|' =>	'LOGOP',
      '@' =>	'LISTOP',
-     '/' =>	'PMOP',  
-     '$' =>	'SVOP',  
+     '/' =>	'PMOP',
+     '$' =>	'SVOP',
      '"' =>	'PVOP',
-     '{' =>	'LOOP',    
+     '{' =>	'LOOP',
      ';' =>	'COP',,
      '#' =>	'PADOP',
     );
@@ -43,16 +43,16 @@ sub testop {
     } else {
 	warn "things depend on having B::Concise,-exec line";
     }
-    
+
     # later, we'll emit the low-level code
     if ($args{emit}) {
 	diag( "auto-gen'd, needs massaging\n",
 	      "testop(\$op,\n",
-	      map("\t $_ \t=> '$args{$_}',\n", 
+	      map("\t $_ \t=> '$args{$_}',\n",
 		  sort keys %args),
 	      "\t);\n");
     }
-    
+
     my $label = $args{label} || $args{name};
 
     if ($args{ref}) {
@@ -155,7 +155,7 @@ sub istrue { (shift) }
 sub parse_bcons {
     # digest B::Concise,-exec line, populate \%args with tests
     my $tests = shift;
-    
+
     my $line = $tests->{bcons};
     my ($cls, $nm, $arg, $flg, $to);
 
@@ -170,11 +170,11 @@ sub parse_bcons {
 	$tests->{ref} = 'B::'.$clsmap{$1}
     };
     $long =~ s/^(\w+)// && do {
-	$tests->{name}	//= $1;
-	$tests->{label}	//= $1;
-	$tests->{arg}	//= $long;
+	$tests->{name} = $1 unless defined $tests->{name};
+	$tests->{label} = $1 unless defined $tests->{label};
+	$tests->{arg} = $long unless defined $tests->{arg};
     };
-    
+
     # parse pub-flags
     if ($flg) {
 	my ($pub,$priv) = split m|/|, $flg;
@@ -220,33 +220,33 @@ sub parse_bcons {
 	# ie mismatch between bcons arg and tested obj
 	
 	/IV$/ && do {
-	    $tests->{sv} //= sub { "->NV \"".(shift)->NV() .'"' };
+	    $tests->{sv} = sub { "->NV \"".(shift)->NV() .'"' } unless defined $tests->{sv};
 	};
 	/NV$/ && do {
-	    $tests->{sv} //= sub { "->NV \"".(shift)->NV() .'"' };
+	    $tests->{sv} = sub { "->NV \"".(shift)->NV() .'"' } unless defined $tests->{sv} ;
 	};
 	/PV$/ && do {
-	    $tests->{sv} //=
+	    $tests->{sv} =
 		sub {
 		    my $sv = shift;
 		    my $res;
 		    ok($res = $sv->PV, "->PV $res");
 		    ok($res = $sv->PVX, "->PVX $res");
 		    ok($res = $sv->CUR, "->CUR $res");
-		    ok($res = $sv->LEN, "->LEN $res");
+		    ok($res = $sv->LEN, "->LEN $res") if $] < 5.010;
 		    Dump($sv) unless $res;
 		    1;
-	    };
+	    } unless defined $tests->{sv};
 	};
 	/\*(w+)$/ && do {
 	    diag ("found gv[$1]\n");
 	    # $tests->{sv} //= sub { "->NV \"".(shift)->NV() .'"' };
 	};
 	/t(\d+)/ && do {
-	    $tests->{targ} //= $1;
+	    $tests->{targ} = $1 unless defined $tests->{targ};
 	};
     }
-    $tests->{type} //= B::opnumber($tests->{name});
+    $tests->{type} = B::opnumber($tests->{name}) unless defined $tests->{type};
 }
 
 
@@ -342,7 +342,7 @@ Here, all keys (except bcons) are legitimate methods on $op, they're
 each run and result is validated against values, typically something
 like this:
 
-    # f  <$> const[PV "1st thing in main"] sM 
+    # f  <$> const[PV "1st thing in main"] sM
     ok 99 - isa B::SVOP=SCALAR(0x8a32eec)
     ok 100 - const->flags is 34
     ok 101 - const->name is const
@@ -374,7 +374,7 @@ Due to presence of this pair, testop() invokes C<< $code->($op->sv);
 explanatory text (see above).
 
 You have a lot of flexibility here; you can call any and all methods
-of the object returned by the $op->method ('sv' here). and you can 
+of the object returned by the $op->method ('sv' here). and you can
 
 
  - and enough rope to hang yourself.
@@ -459,12 +459,12 @@ array of ops in exec-order, and knowledge of the ops themselves:
 
 It should be possible to do something like:
 
-    testop($op[3], 
+    testop($op[3],
 	   bcons    => '<0> pushmark s ->4',
     	   sibling  => $op[4]);
 
 Since pushmark never has kids, its sibling is also its next, and
-should be testable.  CAVEAT - tests like this dont work yet TBD.
+should be testable.  CAVEAT - tests like this dont work yet. TBD
 
 =head2 test_all_ops(\@ops, $rendering);
 
@@ -483,11 +483,11 @@ customized user tests.  An emit-source may be added to improve this.
 
 =head2 anomalous IV,NV behavior
 
-If you search the code for (heading), youll find code which attempts
-to address a discrepancy between how bconcise renders OP_CONST args
+If you search the code for (heading), you will find code which attempts
+to address a discrepancy between how B::Concise renders OP_CONST args
 (typically \[(IV|NV|PVIV) (\w)+\]) and what testing shows to be fatal.
 
-TODO Either turn them into exception tests, or examine B::Concise to
+TODO: Either turn them into exception tests, or examine B::Concise to
 see how its displaying/determining the type.
 
 =head1 Future Development
@@ -503,7 +503,7 @@ test-subs modelled after anonymous subs probing object returned from
 due to brain-dead op-vector build, we only get ops which are not on a
 branch, excluding if blocks, for blocks, etc..
 
-Consider a B::Concise callback, or 
+Consider a B::Concise callback, or
 
 =head2 sentinel
 

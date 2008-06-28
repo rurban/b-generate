@@ -218,8 +218,9 @@ sub parse_bcons {
 
 	# anomalous IV,NV behavior
 	# ie mismatch between bcons arg and tested obj
-	
-	/IV$/ && do {
+	# 5.8 dont have NV methods for PVIVs
+
+	/IV$/ && $] > 5.010 && do {
 	    $tests->{sv} = sub { "->NV \"".(shift)->NV() .'"' } unless defined $tests->{sv};
 	};
 	/NV$/ && do {

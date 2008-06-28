@@ -26,6 +26,9 @@ Revision history for Perl extension B::Generate.
       - fix t/inspect-this.t not ok 568 - ->LEN 0.
 	skip all PV->LEN tests >= 5.10
       - removed //= from BTest to support 5.8 and older
+  _09 Reini Urban
+      - fix 5.8.8 test PVIV->NV
+      - < 5.8 and blead DEBUGGING builds fail, the rest passes
 
 1.11 - (releaed by Josh Ben Jore)
   - rt#29257 - patches from Reini Urban & Jim Cromie

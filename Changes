@@ -29,6 +29,13 @@ Revision history for Perl extension B::Generate.
   _09 Reini Urban
       - fix 5.8.8 test PVIV->NV
       - < 5.8 and blead DEBUGGING builds fail, the rest passes
+  _10 Dmitry Karasik 
+      - B::COP->new won't coredump on 5.10.0
+      - proper allocation of COP label
+      - add B::cv_pad for switching padlist during op generation
+      - add B::GVOP->new because B::PADOP is needed on threaded perls
+        where B::SVOP is normally used
+      - added missing t/op_list.t OP_LIST indices for 5.8 (Reini Urban)
 
 1.11 - (releaed by Josh Ben Jore)
   - rt#29257 - patches from Reini Urban & Jim Cromie

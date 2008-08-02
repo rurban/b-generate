@@ -1,5 +1,8 @@
 Revision history for Perl extension B::Generate.
 
+1.13 - (released by Reini Urban)
+  - same as 1.12_10
+
 1.12
   _01 - (against 5.10)
       - fixed a GV assertion error by adding isGV_with_GP

@@ -8,7 +8,7 @@ use B;
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.12_10';
+$VERSION = '1.13';
 
 {
     # 'no warnings' does not work.
@@ -21,7 +21,7 @@ $VERSION = '1.12_10';
 
 package B::OP;
 use constant OP_LIST    => B::opnumber("list");    # MUST FIX CONSTANTS.
-use constant OPf_PARENS => 8;      # *MUST* *FIX* *CONSTANTS*.
+use constant OPf_PARENS => 8;      		   # *MUST* *FIX* *CONSTANTS*.
 use constant OPf_KIDS   => 4;
 
 # This is where we implement op.c in Perl. Sssh.
@@ -118,17 +118,16 @@ sub scope {
 
 1;
 __END__
-# Below is stub documentation for your module. You better edit it!
 
 =head1 NAME
 
-B::Generate - Create your own op trees. 
+B::Generate - Create your own op trees.
 
 =head1 SYNOPSIS
 
     use B::Generate;
     # Do nothing, slowly.
-      CHECK {
+    CHECK {
         my $null = new B::OP("null",0);
         my $enter = new B::OP("enter",0);
         my $cop = new B::COP(0, "hiya", 0);
@@ -143,7 +142,7 @@ B::Generate - Create your own op trees.
         # Tell Perl where to find our tree.
         B::main_root($leave);
         B::main_start($enter);
-      }
+    }
 
 =head1 WARNING
 
@@ -267,7 +266,12 @@ This is just a list of people who have submitted patches to the
 module. To find someone to actually maintain this, please try
 contacting perl5-porters.
 
-Josh Jore, Michael Schwern, Jim Cromie, Scott Walters.
+Josh Jore, Michael Schwern, Jim Cromie, Scott Walters, Reini Urban,
+Anton Berezin, Dmitry Karasik.
+
+Maintainership permissions do have:
+Artur Bergman, Chia-liang Kao, Anton Berezin, Jim Cromie, Joshua ben Jore,
+Michael G Schwern, Matt S Trout, Reini Urban, Scott Walters.
 
 =head1 LICENSE
 

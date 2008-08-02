@@ -1,6 +1,6 @@
 ---
 name: B-Generate
-version: 1.12_10
+version: 1.13
 author:
   - |-
     Simon Cozens, C<simon@cpan.org>
@@ -18,12 +18,12 @@ dynamic_config: 0
 provides:
   B::Generate:
     file: lib/B/Generate.pm
-    version: 1.12_10
+    version: 1.13
   B::OP:
     file: lib/B/Generate.pm
 no_index:
   package: B::OP
-generated_by: Module::Build version 0.2808
+generated_by: Module::Build version 0.280802
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html
   version: 1.2

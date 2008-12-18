@@ -15,6 +15,14 @@
 #define PL_op_desc (get_op_descs())
 #endif
 
+#ifdef PERL_CUSTOM_OPS
+#define OP_CUSTOM_OPS \
+    if (typenum == OP_CUSTOM) \
+        o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
+#else
+#define OP_CUSTOM_OPS
+#endif
+
 static char *svclassnames[] = {
     "B::NULL",
     "B::IV",
@@ -429,6 +437,35 @@ SVtoO(SV* sv) {
     return 0; /* Not reached */
 }
 
+/* svop_new */
+
+SV *__svop_new(pTHX_ SV *class, SV *type, I32 flags, SV *sv)
+{
+    OP *o;
+    SV *result;
+    SAVE_VARS;
+    SV **sparepad = PL_curpad;
+    PL_curpad = AvARRAY(PL_comppad);
+    OP *saveop = PL_op;
+    I32 typenum = op_name_to_num(type); /* XXX More classes here! */
+    if (typenum == OP_GVSV) {
+        if (*(SvPV_nolen(sv)) == '$') 
+            sv = (SV*)gv_fetchpv(SvPVX(sv)+1, TRUE, SVt_PV);
+        else
+            Perl_croak(aTHX_ 
+                       "First character to GVSV was not dollar");
+    } else
+        if (SvTYPE(sv) != SVt_PVCV) {
+            sv = newSVsv(sv); // copy it unless it's cv
+        }
+    o = newSVOP(typenum, flags, SvREFCNT_inc(sv));
+    OP_CUSTOM_OPS;
+    RESTORE_VARS;
+    result = sv_newmortal();
+    sv_setiv(newSVrv(result, "B::SVOP"), PTR2IV(o));
+    return result;
+}
+
 /* Pre-5.7 compatibility */
 #ifndef op_clear
 void op_clear(OP* o) {
@@ -698,10 +735,7 @@ OP_new(class, type, flags)
 	SAVE_VARS;
         typenum = op_name_to_num(type);
         o = newOP(typenum, flags);
-#ifdef PERL_CUSTOM_OPS
-        if (typenum == OP_CUSTOM)
-            o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
-#endif
+        OP_CUSTOM_OPS;
         RESTORE_VARS;
         ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::OP"), PTR2IV(o));
@@ -801,10 +835,7 @@ UNOP_new(class, type, flags, sv_first)
 	SAVE_VARS;
         typenum = op_name_to_num(type);
         o = newUNOP(typenum, flags, first);
-#ifdef PERL_CUSTOM_OPS
-        if (typenum == OP_CUSTOM)
-            o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
-#endif
+        OP_CUSTOM_OPS;
         RESTORE_VARS;
         }
         ST(0) = sv_newmortal();
@@ -874,10 +905,7 @@ BINOP_new(class, type, flags, sv_first, sv_last)
             o = newASSIGNOP(flags, first, 0, last);
         else {
             o = newBINOP(typenum, flags, first, last);
-#ifdef PERL_CUSTOM_OPS
-            if (typenum == OP_CUSTOM)
-                o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
-#endif
+            OP_CUSTOM_OPS;
         }
 
         RESTORE_VARS;
@@ -929,10 +957,7 @@ LISTOP_new(class, type, flags, sv_first, sv_last)
 
 	SAVE_VARS;
         o = newLISTOP(typenum, flags, first, last);
-#ifdef PERL_CUSTOM_OPS
-        if (typenum == OP_CUSTOM)
-            o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
-#endif
+        OP_CUSTOM_OPS;
 	RESTORE_VARS;
         }
         ST(0) = sv_newmortal();
@@ -981,10 +1006,7 @@ LOGOP_new(class, type, flags, sv_first, sv_last)
         I32 typenum  = op_name_to_num(type);
 	SAVE_VARS;
         o = newLOGOP(typenum, flags, first, last);
-#ifdef PERL_CUSTOM_OPS
-        if (typenum == OP_CUSTOM)
-            o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
-#endif
+        OP_CUSTOM_OPS;
         RESTORE_VARS;
         }
         ST(0) = sv_newmortal();
@@ -1169,14 +1191,6 @@ B::GV
 SVOP_gv(o)
         B::SVOP o
 
-#ifdef PERL_CUSTOM_OPS
-#define OP_CUSTOM_OPS \
-    if (typenum == OP_CUSTOM) \
-        o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
-#else
-#define OP_CUSTOM_OPS
-#endif
-
 #define NEW_SVOP(OP_class,B_class)                                          \
 {                                                                           \
     OP *o;                                                                  \
@@ -1201,6 +1215,16 @@ SVOP_gv(o)
 
 
 SV*
+SVOP_new_svrv(class, type, flags, sv)
+    SV * class
+    SV * type
+    I32 flags
+    SV * sv
+    CODE:
+        ST(0) = __svop_new(aTHX_ class, type, flags, SvRV(sv));
+
+
+void
 SVOP_new(class, type, flags, sv)
     SV * class
     SV * type
@@ -1208,6 +1232,7 @@ SVOP_new(class, type, flags, sv)
     SV * sv
     CODE: 
          NEW_SVOP(newSVOP, "B::SVOP");
+
 
 #define PADOP_padix(o)  o->op_padix
 #define PADOP_sv(o)     (o->op_padix ? PL_curpad[o->op_padix] : Nullsv)
@@ -1410,6 +1435,7 @@ COP_new(class, flags, name, sv_first)
     OP *first = NO_INIT
     OP *o = NO_INIT
     CODE:
+
         if (SvROK(sv_first)) {
             if (!sv_derived_from(sv_first, "B::OP"))
                 Perl_croak(aTHX_ "Reference 'first' was not a B::OP object");
@@ -1496,8 +1522,28 @@ CV_newsub_simple(class, name, block)
         RETVAL = mycv;
     OUTPUT:
         RETVAL
+
+#define PERL_CORE
+#include "embed.h"
        
- 
+B::CV
+CV_NEW_with_start(cv, root, start)
+       B::CV   cv
+       B::OP   root
+       B::OP   start
+    PREINIT:
+       CV *new;
+    CODE:
+       new = cv_clone(cv);
+       CvROOT(new) = root;
+       CvSTART(new) = start;
+       CvDEPTH(new) = 0;
+       SvREFCNT_inc(new);
+       RETVAL = new;
+    OUTPUT:
+       RETVAL
+
+#undef PERL_CORE
 
 MODULE = B::Generate    PACKAGE = B::PV         PREFIX = Sv
 

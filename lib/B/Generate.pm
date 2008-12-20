@@ -8,7 +8,7 @@ use B;
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.14';
+$VERSION = '1.15';
 
 {
     # 'no warnings' does not work.
@@ -97,7 +97,7 @@ sub scope {
     return unless $o and $$o;
     if ( $o->flags & OPf_PARENS ) {
         $o = B::OP->prepend_elem( B::opnumber("lineseq"),
-            B::OP->new( "enter", 0 ), $o );
+             B::OP->new( "enter", 0 ), $o );
         $o->type( B::opnumber("leave") );
     }
     else {
@@ -244,7 +244,7 @@ C<< Devel::Peek::dump($b_sv->sv) >>
 
 =item $b_op->linklist
 
-Sets the C<op_next> pointers in the tree in correct execution order, 
+Sets the C<op_next> pointers in the tree in correct execution order,
 overwriting the old C<next> pointers. You B<need> to do this once you've
 created an op tree for execution, unless you've carefully threaded it
 together yourself.

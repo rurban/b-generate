@@ -145,9 +145,9 @@ find_cv_by_root(OP* o) {
   SV* key;
   HE* cached;
 
-  if(PL_compcv && SvTYPE(PL_compcv) == SVt_PVCV &&
-        !PL_eval_root) {
-      /*  printf("Compcv\n"); */
+  if(PL_compcv && SvTYPE(PL_compcv) == SVt_PVCV && !PL_eval_root)
+  {
+    /*  printf("Compcv\n"); */
     if(SvROK(PL_compcv))
        sv_dump(SvRV(PL_compcv));
     return newRV((SV*)PL_compcv);
@@ -230,14 +230,14 @@ make_sv_object(pTHX_ SV *arg, SV *sv)
     IV iv;
 
     for (iv = 0; iv < sizeof(specialsv_list)/sizeof(SV*); iv++) {
-    if (sv == specialsv_list[iv]) {
-        type = "B::SPECIAL";
-        break;
-    }
+        if (sv == specialsv_list[iv]) {
+            type = "B::SPECIAL";
+            break;
+        }
     }
     if (!type) {
-    type = svclassnames[SvTYPE(sv)];
-    iv = PTR2IV(sv);
+        type = svclassnames[SvTYPE(sv)];
+        iv = PTR2IV(sv);
     }
     sv_setiv(newSVrv(arg, type), iv);
     return arg;
@@ -454,10 +454,11 @@ SV *__svop_new(pTHX_ SV *class, SV *type, I32 flags, SV *sv)
         else
             Perl_croak(aTHX_ 
                        "First character to GVSV was not dollar");
-    } else
+    } else {
         if (SvTYPE(sv) != SVt_PVCV) {
             sv = newSVsv(sv); // copy it unless it's cv
         }
+    }
     o = newSVOP(typenum, flags, SvREFCNT_inc(sv));
     OP_CUSTOM_OPS;
     RESTORE_VARS;
@@ -557,10 +558,10 @@ B_cv_pad(...)
         }
 
 	if ( old_cv) {
-        	ST(0) = sv_newmortal();
-        	sv_setiv(newSVrv(ST(0), "B::CV"), PTR2IV(old_cv));
+            ST(0) = sv_newmortal();
+            sv_setiv(newSVrv(ST(0), "B::CV"), PTR2IV(old_cv));
 	} else {
-		ST(0) = &PL_sv_undef;
+            ST(0) = &PL_sv_undef;
 	}
 
 #define OP_desc(o)      PL_op_desc[o->op_type]

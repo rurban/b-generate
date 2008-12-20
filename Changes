@@ -1,5 +1,15 @@
 Revision history for Perl extension B::Generate.
 
+1.15 - (Reini Urban)
+  - disable some new_cv TARG test failures in t/new_cv.t for 5.10 and higher,
+    new_cv dumps core at destroy with 5.8.6 and lower
+  - disable a segv test for 5.11 in t/basic.t
+  - added to http://github.com/rurban/b-generate,
+    another older svn repo is at http://svn.jifty.org/svn/jifty.org/B-Generate/
+
+1.14 - (Reini Urban)
+  - fix t/inspect-this.t for 5.8.9
+
 1.13 - (released by Reini Urban)
   - same as 1.12_10
 

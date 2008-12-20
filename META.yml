@@ -1,0 +1,29 @@
+---
+name: B-Generate
+version: 1.15
+author:
+  - |-
+    Simon Cozens, C<simon@cpan.org>
+    (Who else?)
+abstract: Create your own op trees.
+license: perl
+resources:
+  license: http://dev.perl.org/licenses/
+requires:
+  B: 1.09
+  ExtUtils::CBuilder: 0
+  Module::Build: 0
+  perl: 5.5.62
+dynamic_config: 0
+provides:
+  B::Generate:
+    file: lib/B/Generate.pm
+    version: 1.15
+  B::OP:
+    file: lib/B/Generate.pm
+no_index:
+  package: B::OP
+generated_by: Module::Build version 0.280802
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2

@@ -1,0 +1,17 @@
+Artistic
+Build.PL
+Changes
+Copying
+lib/B/Generate.pm
+lib/B/Generate.xs
+Makefile.PL
+MANIFEST
+META.yml
+t/basic.t
+BTest.pm
+t/inspect-btest.t
+t/inspect-this.t
+t/new_cv.t
+t/op_list.t
+t/op_list_bgen.t
+typemap

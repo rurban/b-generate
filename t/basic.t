@@ -65,20 +65,23 @@ $d = 10;
 is $c - $d, 3, "Changed the number 30 into 13";
 
 
-# This used to segv
-ok( B::BINOP->new("add", 0, 0, 0) );
-
+# This used to segv: assertion "PL_curcop == &PL_compiling" failed: file "op.c", line 2500
+# with 5.11 only
+SKIP: {
+    skip( q(PL_curcop == &PL_compiling), 1 ) if $] >= 5.011;
+    ok( B::BINOP->new("add", 0, 0, 0) );
+}
 
 BEGIN {
     $foo = sub {
-        is( "bad", "good" );
+        is( "bad", "good", "Turn bad into good" );
     }
 }
 $foo->();
 foo::baz();
 
 sub foo::baz {
-    is( "lead", "gold" );
+    is( "lead", "gold", "Turn lead into gold" );
 }
 
 SKIP: {
@@ -96,5 +99,5 @@ SKIP: {
 
     $x->PV("bar");
     is($x->PV, "bar", '  changing the value of a PV');
-    is($foo, "bar",   '  and the associated lexical changes');
+    is($foo, "bar",   ' and the associated lexical changes');
 }

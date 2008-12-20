@@ -99,3 +99,6 @@ TODO: {
   is($a, 3, 'a is 3');
   is($b, 0, 'b is 0');
 }
+
+# dumps core at END with 5.8.6 and lower
+# END { undef $orz; }

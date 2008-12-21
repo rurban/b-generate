@@ -768,6 +768,12 @@ OP_mutate(o, type)
     OUTPUT:
         o
 
+#if PERL_VERSION < 11
+#define BG_XS_FOLD_CONSTANTS if (o->op_type == type) o = Perl_fold_constants(aTHX_ o)
+#else
+#define BG_XS_FOLD_CONSTANTS
+#endif
+
 B::OP
 OP_convert(o, type, flags)
     B::OP o
@@ -790,8 +796,7 @@ OP_convert(o, type, flags)
 
         o = CALL_FPTR(PL_check[type])(aTHX_ (OP*)o);
 
-        if (o->op_type == type)
-            o = Perl_fold_constants(aTHX_ o);
+        BG_XS_FOLD_CONSTANTS;
 
     OUTPUT:
         o

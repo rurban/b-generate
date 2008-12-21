@@ -1,5 +1,10 @@
 Revision history for Perl extension B::Generate.
 
+1.16 - (Reini Urban)
+  - remove fold_constants from OP_convert() as it is not exported from blead anymore. 
+    No functional difference.
+  - skip t/inspect_this.t plan on unknown patchlevels 
+
 1.15 - (Reini Urban)
   - disable some new_cv TARG test failures in t/new_cv.t for 5.10 and higher,
     new_cv dumps core at destroy with 5.8.6 and lower

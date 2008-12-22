@@ -1505,10 +1505,10 @@ B::OP
 CV_ROOT(cv)
         B::CV   cv
         CODE:
-        if(cv == PL_main_cv) {
-        RETVAL = PL_main_root;
+        if (cv == PL_main_cv) {
+            RETVAL = PL_main_root;
         } else {
-        RETVAL = CvROOT(cv);
+            RETVAL = CvROOT(cv);
         }
         OUTPUT:
         RETVAL
@@ -1544,6 +1544,9 @@ CV_NEW_with_start(cv, root, start)
        CvROOT(new) = root;
        CvSTART(new) = start;
        CvDEPTH(new) = 0;
+#if PERL_VERSION > 9
+       CvPADLIST(new) = CvPADLIST(cv);
+#endif
        SvREFCNT_inc(new);
        RETVAL = new;
     OUTPUT:

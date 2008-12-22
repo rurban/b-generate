@@ -1,10 +1,12 @@
 #!perl -w
 use strict;
-use Test::More tests => 23;
+use Test::More tests => 26;
 use B::Generate;
+use B::Terse;
 use strict;
 no warnings 'void';
 
+my $DEBUG;
 my $orz;
 
 sub foo {
@@ -25,8 +27,18 @@ sub dothat_and_2 {
 }
 
 sub inc_a {
-    # print "# $a:",B::svref_2object(\$a),"\n" if $^P;
     ++$a;
+}
+
+sub showlex {
+    my ($what, $names, $vals) = @_;
+    my @names = $names->ARRAY;
+    my @vals  = $vals->ARRAY;
+    my $count = @names;
+    print "# $what:\n";
+    for (my $i = 1; $i < $count; $i++) {
+	printf "# $i: %s = %s\n", $names[$i]->terse, $vals[$i]->terse;
+    }
 }
 
 sub prepend_function_with_inc {
@@ -42,23 +54,17 @@ sub prepend_function_with_inc {
     is($nextstate->name, ($^P ? 'dbstate' : 'nextstate'), 'nextstate');
 
     my $inc_a = B::svref_2object(\&inc_a);
-    if ($] >= 5.010 and $^P) {
-        # TODO: The padidx is empty in pp_preinc since 5.10.
-        # TARG flag and value missing for the inc_a call, op_private=33 (HASTARG)
-        # padsv: flags=50 (0x32), private=0, targ=1, opt=1
-        #$inc_a->targ(1);
-        #$inc_a->private(33);
+    my $inc_a_entry = $inc_a->START;
+    if ($] >= 5.010 and ($^P or $DEBUG)) {
         print "# code=",$whoami,"\n";
         print "# inc_a=", $inc_a, ", inc_a->OUTSIDE->PADLIST=",$inc_a->OUTSIDE->PADLIST,"\n";
+        showlex("inc_a->OUTSIDE", $inc_a->OUTSIDE->PADLIST->ARRAY) if $DEBUG;
         print "# OUTSIDE=", $inc_a->OUTSIDE, ", PADLIST=",$inc_a->PADLIST,
           ", FLAGS=",$inc_a->FLAGS, ", OUTSIDE_SEQ=", $inc_a->OUTSIDE_SEQ, "\n";
-        print "# padout=",$inc_a->OUTSIDE->PADLIST->ARRAY,"\n";
-        print "# mypad=",$inc_a->PADLIST->ARRAY,"\n";
+        print "# inc_a->targ=",$inc_a->START->targ,"\n";
         print "# a=",B::svref_2object(\$a),"\n";
-        #print "# pad[0]:",$inc_a->PADLIST->ARRAY,"\n";
-        #print "# pad[1]:",$inc_a->PADLIST->ARRAY,"\n";
+        showlex("inc_a", $inc_a->PADLIST->ARRAY) if $DEBUG;
     }
-    my $inc_a_entry = $inc_a->START;
     is($inc_a_entry->name, ($^P ? 'dbstate' : 'nextstate'), 'nextstate');
     my $padsv = $inc_a->START->next;
 
@@ -71,9 +77,8 @@ sub prepend_function_with_inc {
     $inc->sibling($nextstate);
     $inc->next($nextstate);
 
-    # entersub: $whoami->private(33) if ($] >= 5.010);
     my $orz_obj = $whoami->NEW_with_start($leavesub, $inc_a_entry);
-    # => SV = PVCV(flags=0x40)[ B::GV ]
+    showlex("orz", $orz_obj->START->PADLIST->ARRAY) if $DEBUG;
     return $orz_obj->object_2svref;
 }
 
@@ -82,22 +87,29 @@ $orz = prepend_function_with_inc(\&dothat_and_1);
 is(dothat_and_1(), 1, 'dothat_and_1 returns 1');
 is($a, 0, 'a is 0');
 
-SKIP: {
-    skip( q(need to fix svop padlist idx for 5.10), 12 ) if $] >= 5.010 and $^P == 0;
-    is($orz->(), 1, 'orz returns 1');
-    is($a, 1, 'a is 1');
+showlex("comppadlist", B::comppadlist->ARRAY) if $DEBUG;
+is($orz->(), 1, 'orz returns 1');
+is($a, 1, 'a is 1');
 
-    is($orz->(), 1, 'orz returns 1');
-    is($a, 2, 'a is 2');
+showlex("comppadlist", B::comppadlist->ARRAY) if $DEBUG;
+is($orz->(), 1, 'orz returns 1');
+is($a, 2, 'a is 2');
 
-    $orz = prepend_function_with_inc(\&dothat_and_2);
-    is($orz->(), 1, 'dothat_and_2: orz returns 1');
-}
+$orz = prepend_function_with_inc(\&dothat_and_2);
+is($orz->(), 1, 'dothat_and_2: orz returns 1');
 
 TODO: {
-  local $TODO = 'need to fix svop padlist idx';
-  is($a, 3, 'a is 3');
-  is($b, 0, 'b is 0');
+    local $TODO = 'need to fixup padlist targ for cv_clone';
+    showlex("comppadlist", B::comppadlist->ARRAY) if $DEBUG;
+    is($a, 3, 'a is 3');
+    is($b, 0, 'b is 0');
+}
+is($orz->(), 1, 'dothat_and_2: orz returns 1');
+TODO: {
+    local $TODO = 'need to fixup padlist targ for cv_clone';
+    showlex("comppadlist", B::comppadlist->ARRAY) if $DEBUG;
+    is($a, 4, 'a is 4');
+    is($b, 0, 'b is 0');
 }
 
 # dumps core at END with 5.8.6 and lower

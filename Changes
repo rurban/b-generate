@@ -1,5 +1,9 @@
 Revision history for Perl extension B::Generate.
 
+1.18 - (Reini Urban)
+  - Remove the t/new_cv.t todos. 
+  - Explain the correct B::CV::NEW_with_start behaviour
+
 1.17 - (Reini Urban)
   - fixed B::CV::NEW_with_start padlist for 5.10 and newer (different cv_clone behaviour),
     only need to fixup padlist targ for cv_clone

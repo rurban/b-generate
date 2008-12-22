@@ -8,7 +8,7 @@ use B;
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.17';
+$VERSION = '1.18';
 
 {
     # 'no warnings' does not work.
@@ -248,6 +248,12 @@ Sets the C<op_next> pointers in the tree in correct execution order,
 overwriting the old C<next> pointers. You B<need> to do this once you've
 created an op tree for execution, unless you've carefully threaded it
 together yourself.
+
+=item $cv->NEW_with_start (root, start)
+
+Clone the C<cv> with new root and start ops. Note that contrary to C<cv_clone>,
+the PADLIST and pad index is kept, but the index might point to a different lexical,
+because the PADLIST indices will be different. See F<t/new_cv.t>.
 
 =back
 

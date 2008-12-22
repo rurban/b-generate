@@ -8,7 +8,7 @@ use B;
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.16';
+$VERSION = '1.17';
 
 {
     # 'no warnings' does not work.

@@ -1,5 +1,9 @@
 Revision history for Perl extension B::Generate.
 
+1.17 - (Reini Urban)
+  - fixed B::CV::NEW_with_start padlist for 5.10 and newer (different cv_clone behaviour),
+    only need to fixup padlist targ for cv_clone
+
 1.16 - (Reini Urban)
   - remove fold_constants from OP_convert() as it is not exported from blead anymore. 
     No functional difference.

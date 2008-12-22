@@ -16,16 +16,19 @@ sub foo {
 
 my ($a, $b) = 0;
 
+# $a is the first and only lexical here.
 sub dothat_and_1 {
     $a;
     1;
 }
 
+# we swap the lexicals. $b is now the first lexical in the padlist
 sub dothat_and_2 {
     $b, $a;
     1;
 }
 
+# $a is really the first lexical in the padlist
 sub inc_a {
     ++$a;
 }
@@ -98,19 +101,13 @@ is($a, 2, 'a is 2');
 $orz = prepend_function_with_inc(\&dothat_and_2);
 is($orz->(), 1, 'dothat_and_2: orz returns 1');
 
-TODO: {
-    local $TODO = 'need to fixup padlist targ for cv_clone';
-    showlex("comppadlist", B::comppadlist->ARRAY) if $DEBUG;
-    is($a, 3, 'a is 3');
-    is($b, 0, 'b is 0');
-}
+# The inc_a targ 1 is now $b, not $a
+showlex("comppadlist", B::comppadlist->ARRAY) if $DEBUG;
+is($a, 2, 'a is 2');
+is($b, 1, 'b is 1');
 is($orz->(), 1, 'dothat_and_2: orz returns 1');
-TODO: {
-    local $TODO = 'need to fixup padlist targ for cv_clone';
-    showlex("comppadlist", B::comppadlist->ARRAY) if $DEBUG;
-    is($a, 4, 'a is 4');
-    is($b, 0, 'b is 0');
-}
+is($a, 2, 'a is 2');
+is($b, 2, 'b is 2');
 
 # dumps core at END with 5.8.6 and lower
 # END { undef $orz; }

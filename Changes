@@ -1,5 +1,8 @@
 Revision history for Perl extension B::Generate.
 
+1.19 - (Reini Urban)
+  - Re-enable fold_constants in $op->convert, disabled with 1.16
+
 1.18 - (Reini Urban)
   - Remove the t/new_cv.t todos. 
   - Explain the correct B::CV::NEW_with_start behaviour

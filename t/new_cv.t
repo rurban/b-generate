@@ -6,6 +6,14 @@ use B::Terse;
 use strict;
 no warnings 'void';
 
+SKIP: {
+    if ($^O eq 'MSWin32') {
+        skip "B::CV->NEW_with_start disabled on MSWin32", 26;
+    }
+    if (eval "$B::VERSION" < '1.09') {
+        skip "B::CV->NEW_with_start requires B 1.09", 26;
+    }
+
 my $DEBUG;
 my $orz;
 
@@ -111,3 +119,5 @@ is($b, 2, 'b is 2');
 
 # dumps core at END with 5.8.6 and lower
 # END { undef $orz; }
+
+}

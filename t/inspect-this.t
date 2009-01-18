@@ -5,6 +5,11 @@ BEGIN {
       ? ($] >= 5.008009 ? 650 : 658)
       : 648; # skip PV->LEN tests on 5.10
     use Config;
+    require B::Concise;
+    if (eval "$B::Concise::VERSION" < '0.64') {
+        print "1..0 #BTest requires B::Concise 0.64\n";
+        exit;
+    }
     require Test::More;
     if ($Config{PERL_PATCHLEVEL} and $] < 5.0100) {
 	Test::More->import('no_plan');
@@ -46,7 +51,6 @@ sub Foo::bar { 1 }
 my $f = bless {}, 'Foo';
 
 $f->bar;
-
 
 test_self_ops( -v => scalar @ARGV );
 

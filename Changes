@@ -1,5 +1,15 @@
 Revision history for Perl extension B::Generate.
 
+1.20 - (Reini Urban)
+  - Remove certain features for MSWin32: disable CV->NEW_with_start,
+    setting op->targ, and folding constants with op->convert.
+    Reason: Perl_pad_alloc, Perl_fold_constants, Perl_cv_clone
+    not exported with MSVC and mingw perls. CPAN #28912
+  - fixed __svop_new for MSVC. cl is stricter
+  - fixed t/inspect-this.t for MSWin32: file regex => eq test
+  - t/inspect-this.t requires B::Concise 0.64
+  - fix t/op_list.t for perl-5.6.2
+
 1.19 - (Reini Urban)
   - Re-enable fold_constants in $op->convert, disabled with 1.16
 

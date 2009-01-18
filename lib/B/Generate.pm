@@ -8,7 +8,7 @@ use B;
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.19';
+$VERSION = '1.20';
 
 {
     # 'no warnings' does not work.
@@ -254,6 +254,15 @@ together yourself.
 Clone the C<cv> with new root and start ops. Note that contrary to C<cv_clone>,
 the PADLIST and pad index is kept, but the index might point to a different lexical,
 because the PADLIST indices will be different. See F<t/new_cv.t>.
+
+Warning: C<$cv->NEW_with_start> is disabled on B<MSWin32>, see CPAN RT#28912.
+
+=item $b_op->targ ( [ targ] )
+
+Get or set the PADOFFSET.
+
+Warning: Setting the targ with C<$op->targ> is disabled on B<MSWin32>,
+see CPAN RT#28912.
 
 =back
 

@@ -15,6 +15,15 @@
 #define PL_op_desc (get_op_descs())
 #endif
 
+/* CPAN #28912: MSWin32 as only platform does not export PERL_CORE functions,
+   such as Perl_pad_alloc, Perl_cv_clone, Perl_fold_constants,
+   so disable this feature on MSWin32.
+   TODO: Add the patchlevel here when it is fixed in CORE.
+*/
+#if defined(WIN32) || defined(_MSC_VER) || defined(__MINGW32_VERSION)
+#define DISABLE_PERL_CORE_EXPORTED
+#endif
+
 #ifdef PERL_CUSTOM_OPS
 #define OP_CUSTOM_OPS \
     if (typenum == OP_CUSTOM) \
@@ -443,11 +452,15 @@ SV *__svop_new(pTHX_ SV *class, SV *type, I32 flags, SV *sv)
 {
     OP *o;
     SV *result;
+    SV **sparepad;
+    OP *saveop;
+    I32 typenum;
+
     SAVE_VARS;
-    SV **sparepad = PL_curpad;
+    sparepad = PL_curpad;
     PL_curpad = AvARRAY(PL_comppad);
-    OP *saveop = PL_op;
-    I32 typenum = op_name_to_num(type); /* XXX More classes here! */
+    saveop = PL_op;
+    typenum = op_name_to_num(type); /* XXX More classes here! */
     if (typenum == OP_GVSV) {
         if (*(SvPV_nolen(sv)) == '$') 
             sv = (SV*)gv_fetchpv(SvPVX(sv)+1, TRUE, SVt_PV);
@@ -619,7 +632,11 @@ OP_targ(o, ...)
 
         /* begin highly experimental */
         if (items > 1 && (SvIV(ST(1)) > 1000 || SvIV(ST(1)) & 0x80000000)) {
-
+        /* CPAN #28912: MSWin32 does not export Perl_pad_alloc, 
+           so disable this feature on MSWin32. */
+#ifdef DISABLE_PERL_CORE_EXPORTED
+            Perl_croak(aTHX_ "Setting B::OP->targ disabled on MSWin32");
+#else
             AV *padlist = INT2PTR(AV*,SvIV(ST(1)));
 
             I32 old_padix             = PL_padix;
@@ -658,7 +675,7 @@ OP_targ(o, ...)
             PL_curpad            = old_curpad;
             PL_comppad           = old_comppad;
             PL_comppad_name      = old_comppad_name;
-
+#endif
         }
         /* end highly experimental */
 
@@ -768,8 +785,9 @@ OP_mutate(o, type)
     OUTPUT:
         o
 
-# introduced with change 34924, git change b7783a124ffeaab87679eba041dd9997f4d5372a
+# Introduced with change 34924, git change b7783a124ffeaab87679eba041dd9997f4d5372a
 # Nicholas Clark 2008-11-26 19:36:06
+# This works only on non-MSWin32 platforms, checked by DISABLE_PERL_CORE_EXPORTED
 #if PERL_VERSION >= 11
   #define Perl_fold_constants S_fold_constants
 #endif
@@ -795,9 +813,10 @@ OP_convert(o, type, flags)
         o->op_flags |= flags;
 
         o = CALL_FPTR(PL_check[type])(aTHX_ (OP*)o);
-
+#ifndef DISABLE_PERL_CORE_EXPORTED
         if (o->op_type == type)
             o = Perl_fold_constants(aTHX_ o);
+#endif
 
     OUTPUT:
         o
@@ -1530,6 +1549,7 @@ CV_newsub_simple(class, name, block)
     OUTPUT:
         RETVAL
 
+#ifndef DISABLE_PERL_CORE_EXPORTED
 #define PERL_CORE
 #include "embed.h"
        
@@ -1554,6 +1574,7 @@ CV_NEW_with_start(cv, root, start)
        RETVAL
 
 #undef PERL_CORE
+#endif
 
 MODULE = B::Generate    PACKAGE = B::PV         PREFIX = Sv
 

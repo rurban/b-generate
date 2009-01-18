@@ -203,7 +203,7 @@ sub parse_bcons {
 
 	# parse arg, collect more testable info
 	my ($pkg, $num, $prog, $ln) = split /(?:\s+|:)/, $tests->{arg};
-	$tests->{file} = qr/$prog/;
+	$tests->{file} = $^O eq 'MSWin32' ? $prog : qr{$prog};
 	$tests->{line} = $ln;
 	# $tests->{filegv} = undef;	# no value constraint, just run it
     }

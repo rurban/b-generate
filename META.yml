@@ -3,8 +3,13 @@ name: B-Generate
 version: 1.20
 author:
   - |-
-    Simon Cozens, C<simon@cpan.org>
-    (Who else?)
+    Simon Cozens C<simon@cpan.org>
+    Josh Ben Jore C<jjore@cpan.org>
+    Michael G Schwern C<mschwern@cpan.org>
+    Scott Walters C<scott@illogics.org>
+    Jim Cromie C<jcromie@cpan.org>
+    Reini Urban C<rurban@x-ray.at>
+    Dmitry Karasik C<dmitry@karasik.eu.org>
 abstract: Create your own op trees.
 license: perl
 resources:

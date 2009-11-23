@@ -1,6 +1,6 @@
 ---
 name: B-Generate
-version: 1.20
+version: 1.21
 author:
   - |-
     Simon Cozens C<simon@cpan.org>
@@ -19,16 +19,18 @@ requires:
   ExtUtils::CBuilder: 0
   Module::Build: 0
   perl: 5.5.62
+configure_requires:
+  Module::Build: 0.340201
 dynamic_config: 0
 provides:
   B::Generate:
     file: lib/B/Generate.pm
-    version: 1.20
+    version: 1.21
   B::OP:
     file: lib/B/Generate.pm
 no_index:
   package: B::OP
-generated_by: Module::Build version 0.3
+generated_by: Module::Build version 0.340201
 meta-spec:
-  url: http://module-build.sourceforge.net/META-spec-v1.2.html
-  version: 1.2
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4

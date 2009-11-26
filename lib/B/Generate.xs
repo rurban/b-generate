@@ -20,7 +20,7 @@
    so disable this feature on MSWin32.
    TODO: Add the patchlevel here when it is fixed in CORE.
 */
-#if defined(WIN32) || defined(_MSC_VER) || defined(__MINGW32_VERSION)
+#if defined(WIN32) || defined(_MSC_VER) || defined(__MINGW32_VERSION) || defined(__CYGWIN__)
 #define DISABLE_PERL_CORE_EXPORTED
 #endif
 

@@ -11,6 +11,8 @@ use_ok 'B';
 # release-dependent values, which we reverify using B-Gen in 2nd test
 
 my %list_nums = (
+    146 => "5.011002",
+    146 => "5.011001",
     145 => "5.011000",
     142 => "5.010000",
     142 => "5.008009",

@@ -7,8 +7,8 @@ use strict;
 no warnings 'void';
 
 SKIP: {
-    if ($^O eq 'MSWin32') {
-        skip "B::CV->NEW_with_start disabled on MSWin32", 26;
+    if ($^O eq 'MSWin32' or $^O eq 'cygwin') {
+        skip "B::CV->NEW_with_start disabled on Windows", 26;
     }
     if (eval "$B::VERSION" < '1.09') {
         skip "B::CV->NEW_with_start requires B 1.09", 26;

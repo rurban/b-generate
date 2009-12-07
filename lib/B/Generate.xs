@@ -621,7 +621,7 @@ OP_ppaddr(o, ...)
     OUTPUT:
     RETVAL
 
-const char *
+char *
 OP_desc(o)
         B::OP           o
 

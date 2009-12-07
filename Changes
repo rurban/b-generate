@@ -1,5 +1,8 @@
 Revision history for Perl extension B::Generate.
 
+1.23 - (Reini Urban)
+  - fix Bug #52490 for 5.6.2. const char* not in typemap.
+
 1.22 - (Reini Urban)
   - update t/op_list.t for 5.11.1 and 5.11.2
   - disable fold_constants for cygwin gcc-4 also

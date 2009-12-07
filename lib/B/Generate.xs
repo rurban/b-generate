@@ -7,29 +7,31 @@
 
 
 #ifdef PERL_OBJECT
-#undef PL_op_name
-#undef PL_opargs 
-#undef PL_op_desc
-#define PL_op_name (get_op_names())
-#define PL_opargs (get_opargs())
-#define PL_op_desc (get_op_descs())
+# undef PL_op_name
+# undef PL_opargs 
+# undef PL_op_desc
+# define PL_op_name (get_op_names())
+# define PL_opargs (get_opargs())
+# define PL_op_desc (get_op_descs())
 #endif
 
 /* CPAN #28912: MSWin32 as only platform does not export PERL_CORE functions,
    such as Perl_pad_alloc, Perl_cv_clone, Perl_fold_constants,
-   so disable this feature on MSWin32.
+   so disable this feature on MSWin32, msvc and gcc-4. 
+   cygwin gcc-3 --export-all-symbols was non-strict.
    TODO: Add the patchlevel here when it is fixed in CORE.
 */
-#if defined(WIN32) || defined(_MSC_VER) || defined(__MINGW32_VERSION) || defined(__CYGWIN__)
-#define DISABLE_PERL_CORE_EXPORTED
+#if defined(WIN32) || defined(_MSC_VER) || defined(__MINGW32_VERSION) || \
+    (defined(__CYGWIN__) && (__GNUC__ > 3))
+# define DISABLE_PERL_CORE_EXPORTED
 #endif
 
 #ifdef PERL_CUSTOM_OPS
-#define OP_CUSTOM_OPS \
+# define OP_CUSTOM_OPS \
     if (typenum == OP_CUSTOM) \
         o->op_ppaddr = custom_op_ppaddr(SvPV_nolen(type));
 #else
-#define OP_CUSTOM_OPS
+# define OP_CUSTOM_OPS
 #endif
 
 static char *svclassnames[] = {
@@ -488,11 +490,11 @@ void op_clear(OP* o) {
 }
 #endif
 #ifndef op_null
-#define op_null    croak("This operation requires a newer version of Perl");
+# define op_null    croak("This operation requires a newer version of Perl");
 #endif
 
 #ifndef PM_GETRE
-#define PM_GETRE(o)     ((o)->op_pmregexp)
+# define PM_GETRE(o)     ((o)->op_pmregexp)
 #endif
 
 typedef OP      *B__OP;
@@ -1550,7 +1552,7 @@ CV_newsub_simple(class, name, block)
         RETVAL
 
 #ifndef DISABLE_PERL_CORE_EXPORTED
-#define PERL_CORE
+# define PERL_CORE
 #include "embed.h"
        
 B::CV

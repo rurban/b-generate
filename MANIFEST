@@ -7,6 +7,7 @@ lib/B/Generate.xs
 Makefile.PL
 MANIFEST
 META.yml
+SIGNATURE
 t/basic.t
 BTest.pm
 t/inspect-btest.t

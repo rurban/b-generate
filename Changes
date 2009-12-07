@@ -1,5 +1,9 @@
 Revision history for Perl extension B::Generate.
 
+1.22 - (Reini Urban)
+  - update t/op_list.t for 5.11.1 and 5.11.2
+  - disable fold_constants for cygwin gcc-4 also
+
 1.21 - (Reini Urban)
   - fix t/basic.t for >=5.10.1 and blead. skip panic restartop
 

@@ -1,15 +1,10 @@
 ---
 name: B-Generate
-version: 1.21
+version: 1.22
 author:
   - |-
-    Simon Cozens C<simon@cpan.org>
-    Josh Ben Jore C<jjore@cpan.org>
-    Michael G Schwern C<mschwern@cpan.org>
-    Scott Walters C<scott@illogics.org>
-    Jim Cromie C<jcromie@cpan.org>
-    Reini Urban C<rurban@x-ray.at>
-    Dmitry Karasik C<dmitry@karasik.eu.org>
+    Simon Cozens, C<simon@cpan.org>
+    (Who else?)
 abstract: Create your own op trees.
 license: perl
 resources:
@@ -18,14 +13,14 @@ requires:
   B: 1.09
   ExtUtils::CBuilder: 0
   Module::Build: 0
-  perl: 5.5.62
+  perl: v5.5.62
 configure_requires:
   Module::Build: 0.340201
 dynamic_config: 0
 provides:
   B::Generate:
     file: lib/B/Generate.pm
-    version: 1.21
+    version: 1.22
   B::OP:
     file: lib/B/Generate.pm
 no_index:

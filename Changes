@@ -1,5 +1,10 @@
 Revision history for Perl extension B::Generate.
 
+1.24 - (Reini Urban)
+  - 5.11.2 does not understand 5.5.62
+    Prereq '5.5.62' for 'perl' is not supported by Module::Build::Compat
+    ERROR: perl (5.006002) is installed, but we need version >= 5.5062
+
 1.23 - (Reini Urban)
   - fix Bug #52490 for 5.6.2. const char* not in typemap.
 

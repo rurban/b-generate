@@ -27,7 +27,7 @@ my $build = $class->new(
     dynamic_config => 0,
     no_index       => { package => 'B::OP', },
     requires       => {
-        perl                 => '5.5.62',
+        perl                 => '5.005062',
         'B'                  => '1.09', # see rt29257 re OP_LIST
         'ExtUtils::CBuilder' => 0,
         'Module::Build'      => 0,

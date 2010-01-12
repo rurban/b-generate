@@ -9,7 +9,6 @@
 
 use B;
 use B::Concise;
-use Devel::Peek;
 
 my %clsmap =
     (

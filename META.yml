@@ -1,6 +1,6 @@
 ---
 name: B-Generate
-version: 1.25
+version: 1.26
 author:
   - |-
     Simon Cozens, C<simon@cpan.org>
@@ -13,14 +13,14 @@ requires:
   B: 1.09
   ExtUtils::CBuilder: 0
   Module::Build: 0
-  perl: v5.5.62
+  perl: 5.005062
 configure_requires:
   Module::Build: 0.35
 dynamic_config: 0
 provides:
   B::Generate:
     file: lib/B/Generate.pm
-    version: 1.25
+    version: 1.26
   B::OP:
     file: lib/B/Generate.pm
 no_index:

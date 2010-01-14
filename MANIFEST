@@ -1,5 +1,6 @@
 Artistic
 Build.PL
+BTest.pm
 Changes
 Copying
 lib/B/Generate.pm
@@ -7,9 +8,7 @@ lib/B/Generate.xs
 Makefile.PL
 MANIFEST
 META.yml
-SIGNATURE
 t/basic.t
-BTest.pm
 t/inspect-btest.t
 t/inspect-this.t
 t/new_cv.t

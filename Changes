@@ -1,5 +1,8 @@
 Revision history for Perl extension B::Generate.
 
+1.26 - (Reini Urban)
+  - fix t/op_list.t for 5.12
+
 1.25 - (Reini Urban)
   - removed Devel::Peek from BTest.pm
 

@@ -1,5 +1,8 @@
 Revision history for Perl extension B::Generate.
 
+1.25 - (Reini Urban)
+  - removed Devel::Peek from BTest.pm
+
 1.24 - (Reini Urban)
   - 5.11.2 does not understand 5.5.62
     Prereq '5.5.62' for 'perl' is not supported by Module::Build::Compat

@@ -580,7 +580,7 @@ B_cv_pad(...)
             ST(0) = &PL_sv_undef;
 	}
 
-#define OP_desc(o)      PL_op_desc[o->op_type]
+#define OP_desc(o)      (char* const)PL_op_desc[o->op_type]
 
 MODULE = B::Generate    PACKAGE = B::OP         PREFIX = OP_
 
@@ -664,7 +664,6 @@ OP_targ(o, ...)
 #ifndef DISABLE_PERL_CORE_EXPORTED
             o->op_targ = pad_alloc(0, SVs_PADTMP);
 #else
-
             /* CPAN #28912: MSWin32 does not export Perl_pad_alloc.
                Copied from Perl_pad_alloc for PADTMP:
                Scan the pad from PL_padix upwards for a slot which 

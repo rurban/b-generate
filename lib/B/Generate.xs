@@ -20,6 +20,7 @@
    so disable this feature on MSWin32, msvc and gcc-4. 
    cygwin gcc-3 --export-all-symbols was non-strict.
    TODO: Add the patchlevel here when it is fixed in CORE.
+   TODO: AIX and posix with export PERL_DL_NONLAZY=1 also fails
 */
 #if defined(WIN32) || defined(_MSC_VER) || defined(__MINGW32_VERSION) || \
     (defined(__CYGWIN__) && (__GNUC__ > 3))
@@ -634,11 +635,6 @@ OP_targ(o, ...)
 
         /* begin highly experimental */
         if (items > 1 && (SvIV(ST(1)) > 1000 || SvIV(ST(1)) & 0x80000000)) {
-        /* CPAN #28912: MSWin32 does not export Perl_pad_alloc, 
-           so disable this feature on MSWin32. */
-#ifdef DISABLE_PERL_CORE_EXPORTED
-            Perl_croak(aTHX_ "Setting B::OP->targ disabled on MSWin32");
-#else
             AV *padlist = INT2PTR(AV*,SvIV(ST(1)));
 
             I32 old_padix             = PL_padix;
@@ -665,9 +661,31 @@ OP_targ(o, ...)
 	     * PL_min_intro_pending = 0;
 	     * PL_cv_has_eval       = 0;
 	     */
+#ifndef DISABLE_PERL_CORE_EXPORTED
+            o->op_targ = pad_alloc(0, SVs_PADTMP);
+#else
 
-            o->op_targ = Perl_pad_alloc(aTHX_ 0, SVs_PADTMP);
-
+            /* CPAN #28912: MSWin32 does not export Perl_pad_alloc.
+               Copied from Perl_pad_alloc for PADTMP:
+               Scan the pad from PL_padix upwards for a slot which 
+               has no name and no active value. */
+            {
+                SV* sv;
+                SV * const * const names = AvARRAY(PL_comppad_name);
+                const SSize_t names_fill = AvFILLp(PL_comppad_name);
+                for (;;) {
+                    if (++PL_padix <= names_fill &&
+                        (sv = names[PL_padix]) && sv != &PL_sv_undef)
+                        continue;
+                    sv = *av_fetch(PL_comppad, PL_padix, TRUE);
+                    if (!(SvFLAGS(sv) & (SVs_PADTMP | SVs_PADMY)) &&
+                        !IS_PADGV(sv) && !IS_PADCONST(sv))
+                        break;
+                }
+                o->op_targ = PL_padix;
+                SvFLAGS(sv) |= SVs_PADTMP;
+            }
+#endif
             PL_padix             = old_padix;
             PL_comppad_name_fill = old_comppad_name_fill;
             PL_min_intro_pending = old_min_intro_pending;
@@ -677,7 +695,6 @@ OP_targ(o, ...)
             PL_curpad            = old_curpad;
             PL_comppad           = old_comppad;
             PL_comppad_name      = old_comppad_name;
-#endif
         }
         /* end highly experimental */
 
@@ -845,6 +862,7 @@ UNOP_new(class, type, flags, sv_first)
     OP *o = NO_INIT
     I32 typenum = NO_INIT
     CODE:
+        I32 padflag = 0;
         if (SvROK(sv_first)) {
             if (!sv_derived_from(sv_first, "B::OP"))
                 Perl_croak(aTHX_ "Reference 'first' was not a B::OP object");
@@ -858,7 +876,6 @@ UNOP_new(class, type, flags, sv_first)
         else
             first = Nullop;
         {
-        I32 padflag = 0;
 
 	SAVE_VARS;
         typenum = op_name_to_num(type);

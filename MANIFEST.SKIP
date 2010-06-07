@@ -1,0 +1,8 @@
+^MYMETA.yml$
+^\.git
+^B-Generate.*\.tar\.gz$
+Build
+^blib
+~$
+^log\.test-
+^_build

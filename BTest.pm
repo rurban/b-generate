@@ -127,7 +127,7 @@ sub test_self_ops {
 
     eval "use B::Generate";
 
-    # OTOH, if we dont require it here, we get failures in sv tests
+    # OTOH, if we don't require it here, we get failures in sv tests
     # because B returns B::SPECIAL objects rather than the B::SVOPs
     # that B::Generate returns, which respond 'properly' to ->sv()
     # methods
@@ -217,7 +217,7 @@ sub parse_bcons {
 
 	# anomalous IV,NV behavior
 	# ie mismatch between bcons arg and tested obj
-	# 5.8 dont have NV methods for PVIVs
+	# 5.8 don't have NV methods for PVIVs
 
 	/IV$/ && $] > 5.010 && do {
 	    $tests->{sv} = sub { "->NV \"".(shift)->NV() .'"' } unless defined $tests->{sv};
@@ -323,7 +323,7 @@ value's type:
     scalar - is()
     regexp - like()
     array  - grep { $retval eq $_ } @array
-    undef  - call $op->$k(), dont test retval
+    undef  - call $op->$k(), don't test retval
     CODE   - call $code->($op->$k()), let code validate retval
 
 This gives brevity and flexibilty, letting users run methods on one op
@@ -464,7 +464,7 @@ It should be possible to do something like:
     	   sibling  => $op[4]);
 
 Since pushmark never has kids, its sibling is also its next, and
-should be testable.  CAVEAT - tests like this dont work yet. TBD
+should be testable.  CAVEAT - tests like this don't work yet. TBD
 
 =head2 test_all_ops(\@ops, $rendering);
 

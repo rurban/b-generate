@@ -1,5 +1,11 @@
 Revision history for Perl extension B::Generate.
 
+1.27 - (Reini Urban)
+  - fixed op->targ: implemented pad_alloc for DISABLE_PERL_CORE_EXPORTED 
+    platforms (Win32, AIX, newer cygwin) with strict linkers.
+    CPAN #28912 hereby partially solved.
+    posix with export PERL_DL_NONLAZY=1 still broken.
+
 1.26 - (Reini Urban)
   - fix t/op_list.t for 5.12
 

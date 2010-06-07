@@ -20,10 +20,10 @@
    so disable this feature on MSWin32, msvc and gcc-4. 
    cygwin gcc-3 --export-all-symbols was non-strict.
    TODO: Add the patchlevel here when it is fixed in CORE.
-   TODO: AIX and posix with export PERL_DL_NONLAZY=1 also fails
+   TODO: posix with export PERL_DL_NONLAZY=1 also fails
 */
 #if defined(WIN32) || defined(_MSC_VER) || defined(__MINGW32_VERSION) || \
-    (defined(__CYGWIN__) && (__GNUC__ > 3))
+    (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX)
 # define DISABLE_PERL_CORE_EXPORTED
 #endif
 

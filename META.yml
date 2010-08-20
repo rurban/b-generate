@@ -7,7 +7,7 @@ build_requires:
 configure_requires:
   Module::Build: 0.36
 dynamic_config: 0
-generated_by: 'Module::Build version 0.3603'
+generated_by: 'Module::Build version 0.3607'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -18,7 +18,7 @@ no_index:
 provides:
   B::Generate:
     file: lib/B/Generate.pm
-    version: 1.27
+    version: 1.28
   B::OP:
     file: lib/B/Generate.pm
 requires:
@@ -27,5 +27,7 @@ requires:
   Module::Build: 0
   perl: 5.005062
 resources:
+  MailingList: "mailto:\"600 subscribers\" <perl5-porters@perl.org>"
   license: http://dev.perl.org/licenses/
-version: 1.27
+  repository: http://github.com/rurban/b-generate
+version: 1.28

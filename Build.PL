@@ -32,7 +32,12 @@ my $build = $class->new(
         'ExtUtils::CBuilder' => 0,
         'Module::Build'      => 0,
     },
+    meta_merge     => {
+        resources => {
+            MailingList => 'mailto:"600 subscribers" <perl5-porters@perl.org>',
+            repository  => 'http://github.com/rurban/b-generate',
+        }
+    },
     %newTweaks,
 );
 $build->create_build_script;
-

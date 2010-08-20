@@ -1,5 +1,14 @@
 Revision history for Perl extension B::Generate.
 
+1.28 - (Reini Urban)
+  - fix CPAN #59502 "Provokes error for B::Concise, B::Debug and B::Deparse"
+    (svclassnames patch by Ben Morrow)
+  - added t/svclasses.t for CPAN #59502
+  - silence COP_warnings and OP_desc warnings
+  - fix OP_targ compilation for MSWin32. Missing sv decl
+  - added README
+  - added github repo url
+
 1.27 - (Reini Urban)
   - fixed op->targ: implemented pad_alloc for DISABLE_PERL_CORE_EXPORTED 
     platforms (Win32, AIX, newer cygwin) with strict linkers.

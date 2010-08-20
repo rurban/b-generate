@@ -20,7 +20,7 @@
    so disable this feature on MSWin32, msvc and gcc-4. 
    cygwin gcc-3 --export-all-symbols was non-strict.
    TODO: Add the patchlevel here when it is fixed in CORE.
-   TODO: posix with export PERL_DL_NONLAZY=1 also fails
+   TODO: AIX and posix with export PERL_DL_NONLAZY=1 also fails
 */
 #if defined(WIN32) || defined(_MSC_VER) || defined(__MINGW32_VERSION) || \
     (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX)
@@ -35,21 +35,36 @@
 # define OP_CUSTOM_OPS
 #endif
 
-static char *svclassnames[] = {
+static const char* const svclassnames[] = {
     "B::NULL",
+#if PERL_VERSION >= 9
+    "B::BIND",
+#endif
     "B::IV",
     "B::NV",
+#if PERL_VERSION <= 10
     "B::RV",
+#endif
     "B::PV",
     "B::PVIV",
     "B::PVNV",
     "B::PVMG",
+#if PERL_VERSION <= 8
     "B::BM",
+#endif
+#if PERL_VERSION >= 11
+    "B::REGEXP",
+#endif
+#if PERL_VERSION >= 9
+    "B::GV",
+#endif
     "B::PVLV",
     "B::AV",
     "B::HV",
     "B::CV",
+#if PERL_VERSION <= 8
     "B::GV",
+#endif
     "B::FM",
     "B::IO",
 };
@@ -248,7 +263,7 @@ make_sv_object(pTHX_ SV *arg, SV *sv)
         }
     }
     if (!type) {
-        type = svclassnames[SvTYPE(sv)];
+        type = (char*)svclassnames[SvTYPE(sv)];
         iv = PTR2IV(sv);
     }
     sv_setiv(newSVrv(arg, type), iv);
@@ -661,7 +676,7 @@ OP_targ(o, ...)
 	     * PL_min_intro_pending = 0;
 	     * PL_cv_has_eval       = 0;
 	     */
-#ifndef DISABLE_PERL_CORE_EXPORTED
+#if !defined(DISABLE_PERL_CORE_EXPORTED)
             o->op_targ = pad_alloc(0, SVs_PADTMP);
 #else
             /* CPAN #28912: MSWin32 does not export Perl_pad_alloc.
@@ -669,7 +684,7 @@ OP_targ(o, ...)
                Scan the pad from PL_padix upwards for a slot which 
                has no name and no active value. */
             {
-                SV* sv;
+                SV *sv;
                 SV * const * const names = AvARRAY(PL_comppad_name);
                 const SSize_t names_fill = AvFILLp(PL_comppad_name);
                 for (;;) {
@@ -1375,7 +1390,7 @@ LOOP_lastop(o, ...)
 #define COP_arybase(o)  o->cop_arybase
 #endif
 #define COP_line(o)     CopLINE(o)
-#define COP_warnings(o) o->cop_warnings
+#define COP_warnings(o) (SV*)o->cop_warnings
 
 MODULE = B::Generate    PACKAGE = B::COP                PREFIX = COP_
 

@@ -19,7 +19,8 @@ $VERSION = '1.28';
     B::Generate->bootstrap($VERSION);
 }
 
-package B::OP;
+package
+  B::OP; # do not index
 use constant OP_LIST    => B::opnumber("list");    # MUST FIX CONSTANTS.
 use constant OPf_PARENS => 8;      		   # *MUST* *FIX* *CONSTANTS*.
 use constant OPf_KIDS   => 4;
@@ -277,9 +278,10 @@ Simon Cozens, C<simon@cpan.org>
 
 =head1 MAINTAINERS
 
+Currently maintained by Reini Urban.
+
 This is just a list of people who have submitted patches to the
-module. To find someone to actually maintain this, please try
-contacting perl5-porters.
+module. You may also try contacting perl5-porters.
 
 Josh Jore, Michael Schwern, Jim Cromie, Scott Walters, Reini Urban,
 Anton Berezin, Dmitry Karasik.
@@ -295,6 +297,6 @@ license and the GPL.
 
 =head1 SEE ALSO
 
-L<B>, F<perlguts>, F<op.c>
+L<B>, F<perlguts>, F<op.c>, B<perloptree> with L<B::C>
 
 =cut

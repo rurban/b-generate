@@ -1,5 +1,8 @@
 Revision history for Perl extension B::Generate.
 
+1.29 - (Reini Urban)
+  - remove CALL_FPTR, removed from core with 5.13.4 commit 16c91539
+
 1.28 - (Reini Urban)
   - fix CPAN #59502 "Provokes error for B::Concise, B::Debug and B::Deparse"
     (svclassnames patch by Ben Morrow)

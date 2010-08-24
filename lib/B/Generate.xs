@@ -820,7 +820,8 @@ OP_mutate(o, type)
 
 # Introduced with change 34924, git change b7783a124ffeaab87679eba041dd9997f4d5372a
 # Nicholas Clark 2008-11-26 19:36:06
-# This works only on non-MSWin32 platforms, checked by DISABLE_PERL_CORE_EXPORTED
+# This works now only on non-MSWin32 platforms and without PERL_DL_NONLAZY=1,
+# checked by DISABLE_PERL_CORE_EXPORTED
 #if PERL_VERSION >= 11
   #define Perl_fold_constants S_fold_constants
 #endif
@@ -845,7 +846,7 @@ OP_convert(o, type, flags)
         o->op_ppaddr = PL_ppaddr[type];
         o->op_flags |= flags;
 
-        o = CALL_FPTR(PL_check[type])(aTHX_ (OP*)o);
+        o = PL_check[type](aTHX_ (OP*)o);
 #ifndef DISABLE_PERL_CORE_EXPORTED
         if (o->op_type == type)
             o = Perl_fold_constants(aTHX_ o);

@@ -4,7 +4,7 @@ use Test::More tests => 31;
 use_ok 'B';
 use_ok 'B::Generate';
 
-#use lib '.';
+use lib 't';
 use BTest;
 
 # Store ops in exe order, so linkage tests are easier.  Ops which have

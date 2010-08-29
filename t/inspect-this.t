@@ -20,7 +20,7 @@ BEGIN {
 use_ok 'B';
 
 #use_ok 'B::Generate'; # cannot use here, due to clash with B::Concise
-
+use lib 't';
 use BTest;
 
 $i += $_ for 1..10;

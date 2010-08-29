@@ -1,5 +1,14 @@
 Revision history for Perl extension B::Generate.
 
+1.30 - (Reini Urban)
+  - switch from Module::Build to ExtUtils::MakeMaker. Module::Build 
+    cannot properly track dependencies and drives me insane.
+    mv lib/B/Generate.xs .
+    mv BTest.pm t/
+  - add prominent warning about PERL_DL_NONLAZY. This is a 
+    run-time problem. p5p effectively dropped B::Generate support 
+    since 5.10.
+
 1.29 - (Reini Urban)
   - remove CALL_FPTR, removed from core with 5.13.4 commit 16c91539
 

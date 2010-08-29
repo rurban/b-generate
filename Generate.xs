@@ -15,12 +15,13 @@
 # define PL_op_desc (get_op_descs())
 #endif
 
-/* CPAN #28912: MSWin32 as only platform does not export PERL_CORE functions,
-   such as Perl_pad_alloc, Perl_cv_clone, Perl_fold_constants,
-   so disable this feature on MSWin32, msvc and gcc-4. 
-   cygwin gcc-3 --export-all-symbols was non-strict.
+/* CPAN #28912: MSWin32 and AIX as only platforms do not export PERL_CORE functions,
+   such as Perl_pad_alloc, Perl_cv_clone, Perl_fold_constants anymore.
+   So mark it DISABLE_PERL_CORE_EXPORTED for MSWin32. 
+   Note: cygwin uses --export-all-symbols.
+   POSIX with PERL_DL_NONLAZY=1 also fails. This is fixed in the testsuite and 
+   users are warned about this, but this cannot be solved.
    TODO: Add the patchlevel here when it is fixed in CORE.
-   TODO: AIX and posix with export PERL_DL_NONLAZY=1 also fails
 */
 #if defined(WIN32) || defined(_MSC_VER) || defined(__MINGW32_VERSION) || \
     (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX)

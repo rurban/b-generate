@@ -139,9 +139,10 @@ AUTHOR
     Simon Cozens, "simon@cpan.org" (Who else?)
 
 MAINTAINERS
+    Currently maintained by Reini Urban.
+
     This is just a list of people who have submitted patches to the module.
-    To find someone to actually maintain this, please try contacting
-    perl5-porters.
+    You may also try contacting perl5-porters.
 
     Josh Jore, Michael Schwern, Jim Cromie, Scott Walters, Reini Urban,
     Anton Berezin, Dmitry Karasik.
@@ -155,5 +156,5 @@ LICENSE
     license and the GPL.
 
 SEE ALSO
-    B, perlguts, op.c
+    B, perlguts, op.c, perloptree with B::C
 

@@ -82,4 +82,15 @@ sub test {
   return $_;
 }
 
-sub depend { "README : lib/B/Generate.pm\n\tpod2text lib/B/Generate.pm > README\n"; }
+sub depend {
+  "
+README : lib/B/Generate.pm
+	pod2text lib/B/Generate.pm > README
+
+gcov :
+	\$(MAKE) CCFLAGS=\"\$(CCFLAGS) -fprofile-arcs -ftest-coverage\" LDDLFLAGS=\"\$(LDDLFLAGS) -fprofile-arcs -ftest-coverage\"
+
+gprof :
+	\$(MAKE) CCFLAGS=\"\$(CCFLAGS) -pg\" LDDLFLAGS=\"\$(LDDLFLAGS) -pg\"
+"
+}

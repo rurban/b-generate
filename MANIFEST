@@ -1,14 +1,13 @@
 Artistic
-Build.PL
-BTest.pm
 Changes
 Copying
 lib/B/Generate.pm
-lib/B/Generate.xs
+Generate.xs
 Makefile.PL
 MANIFEST
 META.yml
 README
+t/BTest.pm
 t/basic.t
 t/inspect-btest.t
 t/inspect-this.t

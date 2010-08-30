@@ -157,10 +157,10 @@ sub depend {
 README : lib/B/Generate.pm
 	pod2text lib/B/Generate.pm > README
 
-cov :
+gcov :
 	\$(MAKE) CCFLAGS=\"\$(CCFLAGS) -fprofile-arcs -ftest-coverage\" LDDLFLAGS=\"\$(LDDLFLAGS) -fprofile-arcs -ftest-coverage\"
 
 gprof :
-	\$(MAKE) CCFLAGS=\"\$(CCFLAGS) -gp\" LDDLFLAGS=\"\$(LDDLFLAGS) -gp\"
+	\$(MAKE) CCFLAGS=\"\$(CCFLAGS) -pg\" LDDLFLAGS=\"\$(LDDLFLAGS) -pg\"
 "
 }

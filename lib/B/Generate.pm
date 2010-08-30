@@ -8,7 +8,7 @@ use B;
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.29';
+$VERSION = '1.3001';
 
 {
     # 'no warnings' does not work.
@@ -26,6 +26,7 @@ use constant OPf_PARENS => 8;      		   # *MUST* *FIX* *CONSTANTS*.
 use constant OPf_KIDS   => 4;
 
 # This is where we implement op.c in Perl. Sssh.
+# XXX coverage: 0
 sub linklist {
     my $o = shift;
     if ( $o->can("first") and $o->first and ${ $o->first } ) {
@@ -46,6 +47,7 @@ sub linklist {
     return $o->next;
 }
 
+# XXX coverage: 0
 sub append_elem {
     my ( $class, $type, $first, $last ) = @_;
     return $last  unless $first and $$first;
@@ -69,6 +71,7 @@ sub append_elem {
     return $first;
 }
 
+# XXX coverage: 0
 sub prepend_elem {
     my ( $class, $type, $first, $last ) = @_;
     if ( $last->type() != $type ) {
@@ -93,6 +96,7 @@ sub prepend_elem {
     return $last;    # I cannot believe this works.
 }
 
+# XXX coverage: 0
 sub scope {
     my $o = shift;
     return unless $o and $$o;

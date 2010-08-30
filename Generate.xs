@@ -15,16 +15,17 @@
 # define PL_op_desc (get_op_descs())
 #endif
 
-/* CPAN #28912: MSWin32 as only platform does not export PERL_CORE functions,
-   such as Perl_pad_alloc, Perl_cv_clone, Perl_fold_constants,
-   so disable this feature on MSWin32, msvc and gcc-4. 
-   cygwin gcc-3 --export-all-symbols was non-strict.
+/* CPAN #28912: MSWin32 and AIX as only platforms do not export PERL_CORE functions,
+   such as Perl_pad_alloc, Perl_cv_clone, fold_constants,
+   so disable this feature. cygwin gcc-3 --export-all-symbols was non-strict.
+   POSIX with export PERL_DL_NONLAZY=1 also fails. This is checked in Makefile.PL
+   but cannot be solved for clients adding it.
    TODO: Add the patchlevel here when it is fixed in CORE.
-   TODO: AIX and posix with export PERL_DL_NONLAZY=1 also fails
 */
-#if defined(WIN32) || defined(_MSC_VER) || defined(__MINGW32_VERSION) || \
-    (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX)
-# define DISABLE_PERL_CORE_EXPORTED
+#ifdef DISABLE_PERL_CORE_EXPORTED
+# undef HAVE_PAD_ALLOC
+# undef HAVE_CV_CLONE
+# undef HAVE_FOLD_CONSTANTS
 #endif
 
 #ifdef PERL_CUSTOM_OPS
@@ -157,7 +158,7 @@ set_active_sub(SV *sv)
     /* sv_dump(SvRV(sv)); */
     padlist = CvPADLIST(SvRV(sv));
     if(!padlist) {
-        dTHX;
+        dTHX;				/* XXX coverage 0 */
         sv_dump(sv);
         sv_dump((SV*)padlist);
     }
@@ -173,9 +174,9 @@ find_cv_by_root(OP* o) {
   HE* cached;
 
   if(PL_compcv && SvTYPE(PL_compcv) == SVt_PVCV && !PL_eval_root)
-  {
+  {						/* XXX coverage 0 */
     /*  printf("Compcv\n"); */
-    if(SvROK(PL_compcv))
+    if(SvROK(PL_compcv))			
        sv_dump(SvRV(PL_compcv));
     return newRV((SV*)PL_compcv);
   }     
@@ -200,7 +201,7 @@ find_cv_by_root(OP* o) {
     /* Special case, this is the main root */
     cached = hv_store_ent(root_cache, key, newRV((SV*)PL_main_cv), 0);
   } else if(PL_eval_root == root && PL_compcv) { 
-    SV* tmpcv = (SV*)NEWSV(1104,0);
+    SV* tmpcv = (SV*)NEWSV(1104,0);			/* XXX coverage 0 */
     sv_upgrade((SV *)tmpcv, SVt_PVCV);
     CvPADLIST(tmpcv) = CvPADLIST(PL_compcv);
     SvREFCNT_inc(CvPADLIST(tmpcv));
@@ -232,14 +233,14 @@ find_cv_by_root(OP* o) {
                     GvCV(sv) && !SvVALID(sv) && !CvXSUB(GvCV(sv)) &&
                     CvROOT(GvCV(sv)) == root)
                      {
-            cv = (CV*) GvCV(sv);
+            cv = (CV*) GvCV(sv);			/* XXX coverage 0 */
           }
         }
       }
     }
 
     if(!cv) {
-      Perl_die(aTHX_ "I am sorry but we couldn't find this root!\n");
+      Perl_die(aTHX_ "I am sorry but we couldn't find this root!\n");	/* XXX coverage 0 */
     }
 
     cached = hv_store_ent(root_cache, key, newRV((SV*)cv), 0);
@@ -258,7 +259,7 @@ make_sv_object(pTHX_ SV *arg, SV *sv)
 
     for (iv = 0; iv < sizeof(specialsv_list)/sizeof(SV*); iv++) {
         if (sv == specialsv_list[iv]) {
-            type = "B::SPECIAL";
+            type = "B::SPECIAL";			/* XXX coverage 0 */
             break;
         }
     }
@@ -273,7 +274,7 @@ make_sv_object(pTHX_ SV *arg, SV *sv)
 
 /*
    #define PERL_CUSTOM_OPS
-   now defined by Build.PL, if building for 5.8.x
+   now defined by Makefile.PL, if building for 5.8.x
  */
 static I32
 op_name_to_num(SV * name)
@@ -289,7 +290,7 @@ op_name_to_num(SV * name)
 #endif
 
     if (SvIOK(name) && SvIV(name) >= 0 && SvIV(name) < topop)
-        return SvIV(name);
+        return SvIV(name);			/* XXX coverage 0 */
 
     for (s = PL_op_name[i]; s; s = PL_op_name[++i]) {
         if (strEQ(s, wanted))
@@ -311,7 +312,7 @@ op_name_to_num(SV * name)
     }
 #endif
 
-    croak("No such op \"%s\"", SvPV_nolen(name));
+    croak("No such op \"%s\"", SvPV_nolen(name));	/* XXX coverage 0 */
 
     return -1;
 }
@@ -543,6 +544,7 @@ typedef MAGIC   *B__MAGIC;
 
 MODULE = B::Generate    PACKAGE = B     PREFIX = B_
 
+# XXX coverage 0
 void
 B_fudge()
     CODE:
@@ -550,6 +552,7 @@ B_fudge()
         SSPUSHPTR((SV*)PL_comppad);  
         SSPUSHINT(SAVEt_COMPPAD);
 
+# coverage ok
 B::OP
 B_main_root(...)
     PROTOTYPE: ;$
@@ -560,6 +563,7 @@ B_main_root(...)
     OUTPUT:
         RETVAL
     
+# coverage ok
 B::OP
 B_main_start(...)
     PROTOTYPE: ;$
@@ -570,6 +574,7 @@ B_main_start(...)
     OUTPUT:
         RETVAL
 
+# XXX coverage 0
 SV *
 B_cv_pad(...)
     CV * old_cv = NO_INIT
@@ -599,6 +604,7 @@ B_cv_pad(...)
 
 MODULE = B::Generate    PACKAGE = B::OP         PREFIX = OP_
 
+# XXX coverage 0
 B::CV
 OP_find_cv(o)
         B::OP   o
@@ -607,6 +613,7 @@ OP_find_cv(o)
     OUTPUT:
         RETVAL
 
+# coverage ok
 B::OP
 OP_next(o, ...)
         B::OP           o
@@ -617,6 +624,7 @@ OP_next(o, ...)
     OUTPUT:
         RETVAL
 
+# coverage ok
 B::OP
 OP_sibling(o, ...)
         B::OP           o
@@ -627,6 +635,7 @@ OP_sibling(o, ...)
     OUTPUT:
         RETVAL
 
+# XXX coverage 0
 IV
 OP_ppaddr(o, ...)
         B::OP           o
@@ -637,6 +646,7 @@ OP_ppaddr(o, ...)
     OUTPUT:
     RETVAL
 
+# XXX coverage 0
 char *
 OP_desc(o)
         B::OP           o
@@ -648,7 +658,7 @@ OP_targ(o, ...)
         if (items > 1)
             o->op_targ = (PADOFFSET)SvIV(ST(1));
 
-        /* begin highly experimental */
+        /* begin highly experimental */	/* XXX coverage 0 */
         if (items > 1 && (SvIV(ST(1)) > 1000 || SvIV(ST(1)) & 0x80000000)) {
             AV *padlist = INT2PTR(AV*,SvIV(ST(1)));
 
@@ -676,8 +686,8 @@ OP_targ(o, ...)
 	     * PL_min_intro_pending = 0;
 	     * PL_cv_has_eval       = 0;
 	     */
-#if !defined(DISABLE_PERL_CORE_EXPORTED)
-            o->op_targ = pad_alloc(0, SVs_PADTMP);
+#ifdef HAVE_PAD_ALLOC
+            o->op_targ = Perl_pad_alloc(aTHX_ 0, SVs_PADTMP);
 #else
             /* CPAN #28912: MSWin32 does not export Perl_pad_alloc.
                Copied from Perl_pad_alloc for PADTMP:
@@ -716,12 +726,13 @@ OP_targ(o, ...)
     OUTPUT:
         RETVAL
 
+# coverage 50%
 U16
 OP_type(o, ...)
         B::OP           o
     CODE:
         if (items > 1) {
-            o->op_type = (U16)SvIV(ST(1));
+            o->op_type = (U16)SvIV(ST(1));		/* XXX coverage 0 */
             o->op_ppaddr = PL_ppaddr[o->op_type];
         }
         RETVAL = o->op_type;
@@ -742,6 +753,7 @@ OP_seq(o, ...)
 
 #endif
 
+# coverage ok
 U8
 OP_flags(o, ...)
         B::OP           o
@@ -752,6 +764,7 @@ OP_flags(o, ...)
     OUTPUT:
         RETVAL
 
+# coverage ok
 U8
 OP_private(o, ...)
         B::OP           o
@@ -762,12 +775,14 @@ OP_private(o, ...)
     OUTPUT:
         RETVAL
 
+# XXX coverage 0
 void
 OP_dump(o)
     B::OP o
     CODE:
         op_dump(o);
 
+# XXX coverage 0
 void
 OP_clean(o)
     B::OP o
@@ -775,6 +790,7 @@ OP_clean(o)
         if (o == PL_main_root)
             o->op_next = Nullop;
 
+# XXX coverage 0
 void
 OP_new(class, type, flags)
     SV * class
@@ -791,6 +807,7 @@ OP_new(class, type, flags)
         ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::OP"), PTR2IV(o));
 
+# XXX coverage 0
 void
 OP_newstate(class, flags, label, oldo)
     SV * class
@@ -805,6 +822,7 @@ OP_newstate(class, flags, label, oldo)
         ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::LISTOP"), PTR2IV(o));
 
+# XXX coverage 0
 B::OP
 OP_mutate(o, type)
     B::OP o
@@ -818,14 +836,16 @@ OP_mutate(o, type)
     OUTPUT:
         o
 
-# Introduced with change 34924, git change b7783a124ffeaab87679eba041dd9997f4d5372a
+# Introduced with change 34924, git change b7783a124ff
 # Nicholas Clark 2008-11-26 19:36:06
-# This works now only on non-MSWin32 platforms and without PERL_DL_NONLAZY=1,
+# This works now only on non-MSWin32/AIX platforms and without PERL_DL_NONLAZY=1,
 # checked by DISABLE_PERL_CORE_EXPORTED
-#if PERL_VERSION >= 11
-  #define Perl_fold_constants S_fold_constants
+
+#if defined(HAVE_FOLD_CONSTANTS) && (PERL_VERSION >= 11)
+#  define Perl_fold_constants S_fold_constants
 #endif
 
+# XXX coverage 0
 B::OP
 OP_convert(o, type, flags)
     B::OP o
@@ -847,7 +867,7 @@ OP_convert(o, type, flags)
         o->op_flags |= flags;
 
         o = PL_check[type](aTHX_ (OP*)o);
-#ifndef DISABLE_PERL_CORE_EXPORTED
+#ifdef HAVE_FOLD_CONSTANTS
         if (o->op_type == type)
             o = Perl_fold_constants(aTHX_ o);
 #endif
@@ -857,16 +877,18 @@ OP_convert(o, type, flags)
 
 MODULE = B::Generate    PACKAGE = B::UNOP               PREFIX = UNOP_
 
+# coverage 50%
 B::OP 
 UNOP_first(o, ...)
         B::UNOP o
     CODE:
         if (items > 1)
-            o->op_first = SVtoO(ST(1));
+            o->op_first = SVtoO(ST(1));		/* XXX coverage 0 */
         RETVAL = o->op_first;
     OUTPUT:
         RETVAL
-    
+
+# XXX coverage 0
 void
 UNOP_new(class, type, flags, sv_first)
     SV * class
@@ -903,22 +925,25 @@ UNOP_new(class, type, flags, sv_first)
 
 MODULE = B::Generate    PACKAGE = B::BINOP              PREFIX = BINOP_
 
+# XXX coverage 0
 void
 BINOP_null(o)
         B::BINOP        o
         CODE:
                 op_null((OP*)o);
 
+# coverage 50%
 B::OP
 BINOP_last(o,...)
         B::BINOP        o
     CODE:
         if (items > 1)
-            o->op_last = SVtoO(ST(1));
+            o->op_last = SVtoO(ST(1));	/* XXX coverage 0 */
         RETVAL = o->op_last;
     OUTPUT:
         RETVAL
 
+# coverage 50%
 void
 BINOP_new(class, type, flags, sv_first, sv_last)
     SV * class
@@ -975,6 +1000,7 @@ BINOP_new(class, type, flags, sv_first, sv_last)
 
 MODULE = B::Generate    PACKAGE = B::LISTOP             PREFIX = LISTOP_
 
+# XXX coverage 0
 void
 LISTOP_new(class, type, flags, sv_first, sv_last)
     SV * class
@@ -1025,6 +1051,7 @@ LISTOP_new(class, type, flags, sv_first, sv_last)
 
 MODULE = B::Generate    PACKAGE = B::LOGOP              PREFIX = LOGOP_
 
+# XXX coverage 0
 void
 LOGOP_new(class, type, flags, sv_first, sv_last)
     SV * class
@@ -1072,6 +1099,7 @@ LOGOP_new(class, type, flags, sv_first, sv_last)
         ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::LOGOP"), PTR2IV(o));
 
+# XXX coverage 0
 void
 LOGOP_newcond(class, flags, sv_first, sv_last, sv_else)
     SV * class
@@ -1131,6 +1159,7 @@ LOGOP_newcond(class, flags, sv_first, sv_last, sv_else)
         ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::LOGOP"), PTR2IV(o));
 
+# coverage 50%
 B::OP
 LOGOP_other(o,...)
         B::LOGOP        o
@@ -1222,6 +1251,7 @@ PMOP_precomp(o)
 
 MODULE = B::Generate    PACKAGE = B::SVOP               PREFIX = SVOP_
 
+# coverage 50%
 B::SV
 SVOP_sv(o, ...)
         B::SVOP o
@@ -1233,7 +1263,7 @@ SVOP_sv(o, ...)
             sv = newSVsv(ST(1));
 #ifdef USE_ITHREADS
             if ( cSVOPx(o)->op_sv ) {
-                cSVOPx(o)->op_sv = sv;
+                cSVOPx(o)->op_sv = sv;		/* XXX coverage 0 */
             }
             else {
                 PAD_SVl(o->op_targ) = sv;
@@ -1247,10 +1277,12 @@ SVOP_sv(o, ...)
     OUTPUT:
         RETVAL
 
+# XXX coverage 0
 B::GV
 SVOP_gv(o)
         B::SVOP o
 
+# XXX coverage 0
 #define NEW_SVOP(OP_class,B_class)                                          \
 {                                                                           \
     OP *o;                                                                  \
@@ -1274,6 +1306,7 @@ SVOP_gv(o)
 }                                                                                 
 
 
+# XXX coverage 0
 SV*
 SVOP_new_svrv(class, type, flags, sv)
     SV * class
@@ -1284,6 +1317,7 @@ SVOP_new_svrv(class, type, flags, sv)
         ST(0) = __svop_new(aTHX_ class, type, flags, SvRV(sv));
 
 
+# XXX coverage 0
 void
 SVOP_new(class, type, flags, sv)
     SV * class
@@ -1302,6 +1336,7 @@ SVOP_new(class, type, flags, sv)
 
 MODULE = B::Generate    PACKAGE = B::GVOP              PREFIX = GVOP_
 
+# XXX coverage 0
 SV *
 GVOP_new(class, type, flags, sv)
     SV * class
@@ -1583,9 +1618,9 @@ CV_newsub_simple(class, name, block)
     OUTPUT:
         RETVAL
 
-#ifndef DISABLE_PERL_CORE_EXPORTED
+#ifdef HAVE_CV_CLONE
 # define PERL_CORE
-#include "embed.h"
+# include "embed.h"
        
 B::CV
 CV_NEW_with_start(cv, root, start)

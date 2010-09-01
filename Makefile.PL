@@ -2,7 +2,7 @@ use strict;
 use 5.005062;
 use ExtUtils::MakeMaker;
 use Config;
-use ExtUtils::Embed;
+use ExtUtils::Embed qw(ccopts ldopts);
 
 my $extracflags = '';
 my $lddlflags = $Config{lddlflags};
@@ -16,8 +16,8 @@ $ccflags .= " $extracflags";
 $ccflags .= ' -DPERL_CUSTOM_OPS -DPERL_CUSTOM_OPCODES' if $] >= 5.008;
 
 # Modules using B::Generate should do the same. See also below at test()
-my $broken_plat = $^O =~ /MSWin23|AIX/;
-if ($^O eq 'cygwin' and $Config{gccversion} =~ /^4\./) { $broken_plat++; }
+my $broken_plat = $^O =~ /MSWin32|AIX/;
+$broken_plat = 1 if $^O eq 'cygwin' and $Config{gccversion} =~ /^4\./;
 if ( $ENV{PERL_DL_NONLAZY} and $] > 5.009 ) {
   print "
 Warning: CPAN #28912 Perl 5.10 effectively removed B::Generate support
@@ -34,7 +34,7 @@ If you need PERL_DL_NONLAZY add -DDISABLE_PERL_CORE_EXPORTED to CCFLAGS.
   $ccflags .= " -DDISABLE_PERL_CORE_EXPORTED" if $broken_plat;
 }
 
-# Unused
+# Yet unused
 # MSWin32 should have dumpbin, GNU systems nm, others I have no idea.
 sub findexport {
   my $sym = shift;
@@ -76,17 +76,45 @@ $sym;
 }
 EOF
   close C;
-  my $cflags  = ExtUtils::Embed::ccopts;
-  my $ldflags = ExtUtils::Embed::ldopts;
+
+  my $cflags = ccopts;
   my $exe = $Config{exe_ext};
   my $redir = $^O eq 'MSWin32' ? "> NUL" : "2>&1 >/dev/null";
   print "\nTesting exported symbol $sym\n";
-  my $cmd = "$Config{cc} $cflags test.c $redir";
-  #print "$cmd\n";
-  system $cmd;
-  $cmd = "$Config{ld} $ldflags test$obj $redir";
-  #print "$cmd\n";
-  system $cmd;
+
+  my $coredir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
+  my $libdir  = "$Config{prefix}/lib";
+  my $useshrplib = $Config{useshrplib};
+  my $linkargs;
+  if ($^O eq 'MSWin32' && $Config{cc} =~ m/^cl/i) {
+    my $cmd = "$Config{cc} $cflags -c";
+    print "$cmd\n";
+    system($cmd);
+    my $ok = ($? == 0) and -e "test.obj";
+    return 0 unless $ok;
+
+    $linkargs = ldopts("-std");
+    $linkargs .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
+    $cmd = "$Config{ld} test.obj $linkargs $redir";
+    print "$cmd\n";
+    system $cmd;
+  }
+  else {
+    if ( -e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.(dll|so)$/ ) {
+      # prefer static linkage manually, without broken ExtUtils::Embed 
+      $linkargs = sprintf("%s $coredir/$Config{libperl} %s",
+			  @Config{qw(ldflags libs)});
+    } elsif ( $useshrplib and -e "$libdir/$Config{libperl}") {
+      # debian: /usr/lib/libperl.so.5.10.1 and broken ExtUtils::Embed::ldopts
+      $linkargs = ExtUtils::Embed::ldopts('-std');
+      $linkargs =~ s|-lperl |$libdir/$Config{libperl} |;
+    } else {
+      $linkargs = ExtUtils::Embed::ldopts('-std');
+    }
+    my $cmd = "$Config{cc} $ccflags -I$coredir test.c $linkargs $redir";
+    print "$cmd\n";
+    system $cmd;
+  }
   my $ok = $? == 0;
   print $ok ? " ok\n" : " not found\n";
   return $ok;
@@ -94,13 +122,14 @@ EOF
 
 unless ($broken_plat) {
   END { unlink "a.out", "test.exe", "test$obj", "test.c"; };
-  $extracflags .= " -DHAVE_PAD_ALLOC"
+  $ccflags .= " -DHAVE_PAD_ALLOC"
     if checkexport("Perl_pad_alloc(aTHX_ 0, SVs_PADTMP)");
-  $extracflags .= " -DHAVE_CV_CLONE"
-    if checkexport("CV* cv;\ncv_clone(cv)");
-  $extracflags .= " -DHAVE_FOLD_CONSTANTS"
+  $ccflags .= " -DHAVE_CV_CLONE"
+    if checkexport("CV* cv;\nPerl_cv_clone(aTHX_ cv)");
+  $ccflags .= " -DHAVE_FOLD_CONSTANTS"
     if checkexport("OP* o;\n".($]<5.011?"Perl":"S")."_fold_constants(aTHX_ o)");
-}
+  print "\n";
+} # else -DDISABLE_PERL_CORE_EXPORTED
 
 WriteMakefile
   (
@@ -116,7 +145,7 @@ WriteMakefile
    AUTHOR        => 'Simon Cozens',
    (($^O eq 'darwin') ?
      (LDDLFLAGS     => $lddlflags) : ()),
-   'CCFLAGS'        => $ccflags,
+   CCFLAGS        => $ccflags,
    ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
     ('META_MERGE'  =>
      {

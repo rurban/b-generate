@@ -22,6 +22,11 @@
    but cannot be solved for clients adding it.
    TODO: Add the patchlevel here when it is fixed in CORE.
 */
+#if defined(WIN32) || defined(_MSC_VER) || defined(__MINGW32_VERSION) || \
+    (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX)
+# define DISABLE_PERL_CORE_EXPORTED
+#endif
+
 #ifdef DISABLE_PERL_CORE_EXPORTED
 # undef HAVE_PAD_ALLOC
 # undef HAVE_CV_CLONE
@@ -840,7 +845,6 @@ OP_mutate(o, type)
         o
 
 # Introduced with change 34924, git change b7783a124ff
-# Nicholas Clark 2008-11-26 19:36:06
 # This works now only on non-MSWin32/AIX platforms and without PERL_DL_NONLAZY=1,
 # checked by DISABLE_PERL_CORE_EXPORTED
 
@@ -1640,7 +1644,7 @@ CV_NEW_with_start(cv, root, start)
     PREINIT:
        CV *new;
     CODE:
-       new = cv_clone(cv);
+       new = Perl_cv_clone(aTHX_ cv);
        CvROOT(new) = root;
        CvSTART(new) = start;
        CvDEPTH(new) = 0;

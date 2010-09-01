@@ -1,4 +1,4 @@
-/* -*- C -*- */
+/* -*- mode:C tab-width:4 -*- */
 #define PERL_NO_GET_CONTEXT
 #include "EXTERN.h"
 #include "perl.h"
@@ -160,7 +160,8 @@ set_active_sub(SV *sv)
     if(!padlist) {
         dTHX;				/* XXX coverage 0 */
         sv_dump(sv);
-        sv_dump((SV*)padlist);
+        sv_dump((SV*)SvRV(sv));
+        croak("set_active_sub_root: !CvPADLIST(SvRV(sv))");
     }
     svp = AvARRAY(padlist);
     my_current_pad = AvARRAY((AV*)svp[1]);
@@ -175,10 +176,11 @@ find_cv_by_root(OP* o) {
 
   if(PL_compcv && SvTYPE(PL_compcv) == SVt_PVCV && !PL_eval_root)
   {						/* XXX coverage 0 */
-    /*  printf("Compcv\n"); */
-    if(SvROK(PL_compcv))			
-       sv_dump(SvRV(PL_compcv));
-    return newRV((SV*)PL_compcv);
+      if(SvROK(PL_compcv)) {
+          sv_dump(SvRV(PL_compcv));
+          croak("find_cv_by_root: SvROK(PL_compcv)");
+      }
+      return newRV((SV*)PL_compcv);
   }     
 
 
@@ -227,20 +229,20 @@ find_cv_by_root(OP* o) {
             cv = (CV*) sv;
           } else if( SvTYPE(sv) == SVt_PVGV && 
 #if PERL_VERSION >= 10
-	  	    isGV_with_GP(sv) && 
+                     isGV_with_GP(sv) &&
 #endif
-		    GvGP(sv) &&
-                    GvCV(sv) && !SvVALID(sv) && !CvXSUB(GvCV(sv)) &&
-                    CvROOT(GvCV(sv)) == root)
-                     {
-            cv = (CV*) GvCV(sv);			/* XXX coverage 0 */
+                     GvGP(sv) &&
+                     GvCV(sv) && !SvVALID(sv) && !CvXSUB(GvCV(sv)) &&
+                     CvROOT(GvCV(sv)) == root)
+          {
+              cv = (CV*) GvCV(sv);			/* XXX coverage 0 */
           }
         }
       }
     }
 
     if(!cv) {
-      Perl_die(aTHX_ "I am sorry but we couldn't find this root!\n");	/* XXX coverage 0 */
+        croak("find_cv_by_root: couldn't find the root cv\n");	/* XXX coverage 0 */
     }
 
     cached = hv_store_ent(root_cache, key, newRV((SV*)cv), 0);
@@ -651,6 +653,7 @@ char *
 OP_desc(o)
         B::OP           o
 
+# XXX coverage 50%
 PADOFFSET
 OP_targ(o, ...)
         B::OP           o
@@ -1521,6 +1524,7 @@ COP_warnings(o)
 #define CopLABEL_alloc(x) Perl_savepv(aTHX_ x)
 #endif
 
+# XXX coverage 70%
 B::COP
 COP_new(class, flags, name, sv_first)
     SV * class
@@ -1531,7 +1535,7 @@ COP_new(class, flags, name, sv_first)
     OP *o = NO_INIT
     CODE:
 
-        if (SvROK(sv_first)) {
+        if (SvROK(sv_first)) {	/* # XXX coverage o */
             if (!sv_derived_from(sv_first, "B::OP"))
                 Perl_croak(aTHX_ "Reference 'first' was not a B::OP object");
             else {
@@ -1564,6 +1568,7 @@ COP_new(class, flags, name, sv_first)
 
 MODULE = B::Generate  PACKAGE = B::SV  PREFIX = Sv
 
+# coverage ok
 SV*
 Svsv(sv)
     B::SV   sv
@@ -1572,12 +1577,14 @@ Svsv(sv)
     OUTPUT:
         RETVAL
 
+# XXX coverage 0
 void*
 Svdump(sv)
     B::SV   sv
     CODE:
         sv_dump(sv);
 
+# XXX coverage 0
 U32
 SvFLAGS(sv, ...)
     B::SV   sv
@@ -1590,6 +1597,7 @@ SvFLAGS(sv, ...)
 
 MODULE = B::Generate    PACKAGE = B::CV         PREFIX = CV_
 
+# XXX coverage 0
 B::OP
 CV_ROOT(cv)
         B::CV   cv
@@ -1602,6 +1610,7 @@ CV_ROOT(cv)
         OUTPUT:
         RETVAL
 
+# XXX coverage 0
 B::CV
 CV_newsub_simple(class, name, block)
     SV* class
@@ -1622,6 +1631,7 @@ CV_newsub_simple(class, name, block)
 # define PERL_CORE
 # include "embed.h"
        
+# XXX coverage 0
 B::CV
 CV_NEW_with_start(cv, root, start)
        B::CV   cv
@@ -1647,6 +1657,7 @@ CV_NEW_with_start(cv, root, start)
 
 MODULE = B::Generate    PACKAGE = B::PV         PREFIX = Sv
 
+# XXX coverage 0
 void
 SvPV(sv,...)
         B::PV   sv

@@ -1,5 +1,8 @@
 Revision history for Perl extension B::Generate.
 
+1.31_01 - (Reini Urban)
+   - work on coverage tests
+
 1.31 - (Reini Urban)
    - add prof and cov targets for gcc
    - comment test coverage in the code

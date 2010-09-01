@@ -157,8 +157,16 @@ sub depend {
 README : lib/B/Generate.pm
 	pod2text lib/B/Generate.pm > README
 
-gcov :
+gcov : Generate.c.gcov Generate.xs.gcov cover_db/Generate-xs.html
+
+Generate.c.gcov Generate.xs.gcov : Generate.xs
 	\$(MAKE) CCFLAGS=\"\$(CCFLAGS) -fprofile-arcs -ftest-coverage\" LDDLFLAGS=\"\$(LDDLFLAGS) -fprofile-arcs -ftest-coverage\"
+	gcov Generate.c Generate.xs
+
+cover_db/Generate-xs.html : Generate.xs.gcov
+	PERL5OPT=-MDevel::Cover make test
+	-gcov2perl Generate.c.gcov Generate.xs.gcov
+	cover
 
 gprof :
 	\$(MAKE) CCFLAGS=\"\$(CCFLAGS) -pg\" LDDLFLAGS=\"\$(LDDLFLAGS) -pg\"

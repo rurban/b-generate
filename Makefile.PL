@@ -18,7 +18,16 @@ $ccflags .= ' -DPERL_CUSTOM_OPS -DPERL_CUSTOM_OPCODES' if $] >= 5.008;
 # Modules using B::Generate should do the same. See also below at test()
 my $broken_plat = $^O =~ /MSWin32|AIX/;
 $broken_plat = 1 if $^O eq 'cygwin' and $Config{gccversion} =~ /^4\./;
-if ( $ENV{PERL_DL_NONLAZY} and $] > 5.009 ) {
+if ( $broken_plat and $] > 5.009 ) {
+  # If you need PERL_DL_NONLAZY force this
+  $ccflags .= " -DDISABLE_PERL_CORE_EXPORTED";
+  print "
+Warning: Perl 5.10 effectively removed B::Generate support
+by privatizing some essential libperl functions.
+You can only use a subset of B::Generate functionality. (CPAN #28912)
+
+";
+} elsif ( $ENV{PERL_DL_NONLAZY} and $] > 5.009 ) {
   print "
 Warning: CPAN #28912 Perl 5.10 effectively removed B::Generate support
 by privatizing some essential libperl functions.
@@ -30,8 +39,6 @@ I've unset PERL_DL_NONLAZY for this test.
 If you need PERL_DL_NONLAZY add -DDISABLE_PERL_CORE_EXPORTED to CCFLAGS.
 
 ";
-   # If you need PERL_DL_NONLAZY force this
-  $ccflags .= " -DDISABLE_PERL_CORE_EXPORTED" if $broken_plat;
 }
 
 # Yet unused
@@ -80,7 +87,7 @@ EOF
   my $cflags = ccopts;
   my $exe = $Config{exe_ext};
   my $redir = $^O eq 'MSWin32' ? "> NUL" : "2>&1 >/dev/null";
-  print "\nTesting exported symbol $sym\n";
+  print "\nTesting export for $sym\n";
 
   my $coredir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
   my $libdir  = "$Config{prefix}/lib";

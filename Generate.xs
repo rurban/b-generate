@@ -22,7 +22,8 @@
    but cannot be solved for clients adding it.
    TODO: Add the patchlevel here when it is fixed in CORE.
 */
-#if defined(WIN32) || defined(_MSC_VER) || defined(__MINGW32_VERSION) || \
+#if !defined (DISABLE_PERL_CORE_EXPORTED) || defined(WIN32) || \
+    defined(_MSC_VER) || defined(__MINGW32_VERSION) || \
     (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX)
 # define DISABLE_PERL_CORE_EXPORTED
 #endif

@@ -23,18 +23,19 @@ if ( $broken_plat and $] > 5.009 ) {
   $ccflags .= " -DDISABLE_PERL_CORE_EXPORTED";
   print "
 Warning: Perl 5.10 effectively removed B::Generate support
-by privatizing some essential libperl functions.
+by privatizing some essential libperl functions, which is fatal
+with strict linkers.
 You can only use a subset of B::Generate functionality. (CPAN #28912)
 
 ";
 } elsif ( $ENV{PERL_DL_NONLAZY} and $] > 5.009 ) {
   print "
 Warning: CPAN #28912 Perl 5.10 effectively removed B::Generate support
-by privatizing some essential libperl functions.
+by privatizing some essential libperl functions, which is fatal
+with strict linkers.
 However it still works if do not set PERL_DL_NONLAZY, because those
 functions are still in libperl - unices can access unexported functions
 in shared libs - until the next porter will remove it from there also.
-On Windows some other workarounds are used, but functionality is limited.
 I've unset PERL_DL_NONLAZY for this test.
 If you need PERL_DL_NONLAZY add -DDISABLE_PERL_CORE_EXPORTED to CCFLAGS.
 

@@ -1,8 +1,9 @@
 #!perl
 
-# B::Generate.pm comments say "MUST FIX CONSTANTS", 2x, with *emphasis*.
+# B::Generate.pm comments used to say "MUST FIX CONSTANTS", 2x, with *emphasis*.
 # Whats more, OP_LIST value has changed over releases.
 # So we better test for it.
+# This is not required anymore. We keep this test just for reference.
 
 # 1st test is baseline, not even using/testing B::Generate.  This
 # insures that we get failure reports until we get right

@@ -848,7 +848,7 @@ OP_mutate(o, type)
 #  define Perl_fold_constants S_fold_constants
 #endif
 
-# XXX coverage 0
+# XXX coverage 0, added with 0.07
 B::OP
 OP_convert(o, type, flags)
     B::OP o

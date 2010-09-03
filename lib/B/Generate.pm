@@ -8,7 +8,7 @@ use B;
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.31_01';
+$VERSION = '1.32';
 
 {
     # 'no warnings' does not work.
@@ -21,9 +21,10 @@ $VERSION = '1.31_01';
 
 package
   B::OP; # do not index
-use constant OP_LIST    => B::opnumber("list");    # MUST FIX CONSTANTS.
-use constant OPf_PARENS => 8;      		   # *MUST* *FIX* *CONSTANTS*.
-use constant OPf_KIDS   => 4;
+use constant OP_LIST    => B::opnumber("list");
+use B qw(OPf_PARENS OPf_KIDS);
+# use constant OPf_PARENS => 8;  	   # was hardcoded previously
+# use constant OPf_KIDS   => 4;
 
 # This is where we implement op.c in Perl. Sssh.
 # XXX coverage: 0

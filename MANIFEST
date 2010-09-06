@@ -7,10 +7,7 @@ Makefile.PL
 MANIFEST
 META.yml
 README
-t/BTest.pm
 t/basic.t
-t/inspect-btest.t
-t/inspect-this.t
 t/new_cv.t
 t/op_list.t
 t/op_list_bgen.t

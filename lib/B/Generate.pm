@@ -8,7 +8,7 @@ use B;
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.3201';
+$VERSION = '1.3202';
 
 {
     # 'no warnings' does not work.
@@ -23,8 +23,6 @@ package
   B::OP; # do not index
 use constant OP_LIST    => B::opnumber("list");
 use B qw(OPf_PARENS OPf_KIDS);
-# use constant OPf_PARENS => 8;  	   # was hardcoded previously
-# use constant OPf_KIDS   => 4;
 
 # This is where we implement op.c in Perl. Sssh.
 # XXX coverage: 0
@@ -267,9 +265,6 @@ Warning: C<$cv->NEW_with_start> is disabled on B<MSWin32>, see CPAN RT#28912.
 
 Get or set the PADOFFSET.
 
-Warning: Setting the targ with C<$op->targ> is disabled on B<MSWin32>,
-see CPAN RT#28912.
-
 =back
 
 =head2 EXPORT
@@ -279,7 +274,6 @@ None.
 =head1 AUTHOR
 
 Simon Cozens, C<simon@cpan.org>
-(Who else?)
 
 =head1 MAINTAINERS
 

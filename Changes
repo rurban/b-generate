@@ -1,5 +1,10 @@
 Revision history for Perl extension B::Generate.
 
+1.3202 - (Reini Urban)
+   - Fix a few assertion errors PL_curcop == &PL_compiling
+   - Reformat some XS funcs 
+   - Remove yet unneeded BTest.pm tests
+
 1.3201 - (Reini Urban)
    - Actually use the new unsupported function checks from git.
    - use Perl_cv_clone as this symbol is tested. Do not rely on

@@ -64,18 +64,14 @@ $c = 30;
 $d = 10;
 is $c - $d, 3, "Changed the number 30 into 13";
 
-
 # This used to segv: assertion "PL_curcop == &PL_compiling" failed: file "op.c", line 2500
-# with => 5.11 and >= 5.10.1
-SKIP: {
-    skip( q(PL_curcop == &PL_compiling), 1 );
-    ok( B::BINOP->new("add", 0, 0, 0) ); # since 5.10.1: "panic: restartop"
-}
+# with => 5.11 and >= 5.10.1 with DEBUGGING
+ok( B::BINOP->new("add", 0, 0, 0) ); # fixed "panic: restartop"
 
 BEGIN {
-    $foo = sub {
-        is( "bad", "good", "Turn bad into good" );
-    }
+  $foo = sub {
+    is( "bad", "good", "Turn bad into good" );
+  }
 }
 $foo->();
 foo::baz();

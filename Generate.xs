@@ -17,14 +17,15 @@
 
 /* CPAN #28912: MSWin32 and AIX as only platforms do not export PERL_CORE functions,
    such as Perl_pad_alloc, Perl_cv_clone, fold_constants,
-   so disable this feature. cygwin gcc-3 --export-all-symbols was non-strict.
+   so disable this feature. cygwin gcc-3 --export-all-symbols was non-strict, gcc-4 is.
    POSIX with export PERL_DL_NONLAZY=1 also fails. This is checked in Makefile.PL
    but cannot be solved for clients adding it.
    TODO: Add the patchlevel here when it is fixed in CORE.
 */
-#if !defined (DISABLE_PERL_CORE_EXPORTED) || defined(WIN32) || \
-    defined(_MSC_VER) || defined(__MINGW32_VERSION) || \
-    (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX)
+#if !defined (DISABLE_PERL_CORE_EXPORTED) &&					\
+  (defined(WIN32) ||											\
+   defined(_MSC_VER) || defined(__MINGW32_VERSION) ||			\
+   (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX))
 # define DISABLE_PERL_CORE_EXPORTED
 #endif
 
@@ -699,7 +700,7 @@ OP_targ(o, ...)
             o->op_targ = Perl_pad_alloc(aTHX_ 0, SVs_PADTMP);
 #else
             /* CPAN #28912: MSWin32 does not export Perl_pad_alloc.
-               Copied from Perl_pad_alloc for PADTMP:
+               Rewrite from Perl_pad_alloc for PADTMP:
                Scan the pad from PL_padix upwards for a slot which 
                has no name and no active value. */
             {
@@ -807,14 +808,14 @@ OP_new(class, type, flags)
     I32 flags
     OP *o = NO_INIT
     I32 typenum = NO_INIT
-    CODE:
+CODE:
 	SAVE_VARS;
-        typenum = op_name_to_num(type);
-        o = newOP(typenum, flags);
-        OP_CUSTOM_OPS;
-        RESTORE_VARS;
-        ST(0) = sv_newmortal();
-        sv_setiv(newSVrv(ST(0), "B::OP"), PTR2IV(o));
+	typenum = op_name_to_num(type);
+	o = newOP(typenum, flags);
+	OP_CUSTOM_OPS;
+	RESTORE_VARS;
+	ST(0) = sv_newmortal();
+	sv_setiv(newSVrv(ST(0), "B::OP"), PTR2IV(o));
 
 # XXX coverage 0
 void
@@ -824,12 +825,12 @@ OP_newstate(class, flags, label, oldo)
     char * label
     B::OP oldo
     OP *o = NO_INIT
-    CODE:
+CODE:
 	SAVE_VARS;
-        o = newSTATEOP(flags, label, oldo);
-        RESTORE_VARS;
-        ST(0) = sv_newmortal();
-        sv_setiv(newSVrv(ST(0), "B::LISTOP"), PTR2IV(o));
+	o = newSTATEOP(flags, label, oldo);
+	RESTORE_VARS;
+	ST(0) = sv_newmortal();
+	sv_setiv(newSVrv(ST(0), "B::LISTOP"), PTR2IV(o));
 
 # XXX coverage 0
 B::OP
@@ -837,17 +838,17 @@ OP_mutate(o, type)
     B::OP o
     SV* type
     I32 rtype = NO_INIT
-    CODE:
-        rtype = op_name_to_num(type);
-        o->op_ppaddr = PL_ppaddr[rtype];
-        o->op_type = rtype;
-
-    OUTPUT:
-        o
+  CODE:
+    rtype = op_name_to_num(type);
+	o->op_ppaddr = PL_ppaddr[rtype];
+	o->op_type = rtype;
+  OUTPUT:
+	o
 
 # Introduced with change 34924, git change b7783a124ff
 # This works now only on non-MSWin32/AIX platforms and without PERL_DL_NONLAZY=1,
 # checked by DISABLE_PERL_CORE_EXPORTED
+# If you use such a platform, you have to fold the constants by yourself.
 
 #if defined(HAVE_FOLD_CONSTANTS) && (PERL_VERSION >= 11)
 #  define Perl_fold_constants S_fold_constants
@@ -859,42 +860,46 @@ OP_convert(o, type, flags)
     B::OP o
     I32 flags
     I32 type
-    CODE:
-        if (!o || o->op_type != OP_LIST)
-            o = newLISTOP(OP_LIST, 0, o, Nullop);
-        else
-            o->op_flags &= ~OPf_WANT;
+  CODE:
+	if (!o || o->op_type != OP_LIST)
+	  o = newLISTOP(OP_LIST, 0, o, Nullop);
+	else
+	  o->op_flags &= ~OPf_WANT;
 
-        if (!(PL_opargs[type] & OA_MARK) && o->op_type != OP_NULL) {
-            op_clear(o);
-            o->op_targ = o->op_type;
-        }
+	if (!(PL_opargs[type] & OA_MARK) && o->op_type != OP_NULL) {
+	  op_clear(o);
+	  o->op_targ = o->op_type;
+	}
 
-        o->op_type = type;
-        o->op_ppaddr = PL_ppaddr[type];
-        o->op_flags |= flags;
+    o->op_type = type;
+    o->op_ppaddr = PL_ppaddr[type];
+    o->op_flags |= flags;
 
-        o = PL_check[type](aTHX_ (OP*)o);
+    o = PL_check[type](aTHX_ (OP*)o);
 #ifdef HAVE_FOLD_CONSTANTS
-        if (o->op_type == type)
-            o = Perl_fold_constants(aTHX_ o);
+    if (o->op_type == type) {
+	  COP *cop = PL_curcop;
+	  PL_curcop = &PL_compiling;
+	  o = Perl_fold_constants(aTHX_ o);
+	  PL_curcop = cop;
+	}
 #endif
 
-    OUTPUT:
-        o
+  OUTPUT:
+    o
 
 MODULE = B::Generate    PACKAGE = B::UNOP               PREFIX = UNOP_
 
 # coverage 50%
 B::OP 
 UNOP_first(o, ...)
-        B::UNOP o
-    CODE:
-        if (items > 1)
-            o->op_first = SVtoO(ST(1));		/* XXX coverage 0 */
-        RETVAL = o->op_first;
-    OUTPUT:
-        RETVAL
+    B::UNOP o
+  CODE:
+	if (items > 1)
+	  o->op_first = SVtoO(ST(1));		/* XXX coverage 0 */
+    RETVAL = o->op_first;
+  OUTPUT:
+    RETVAL
 
 # XXX coverage 0
 void
@@ -906,50 +911,55 @@ UNOP_new(class, type, flags, sv_first)
     OP *first = NO_INIT
     OP *o = NO_INIT
     I32 typenum = NO_INIT
-    CODE:
-        I32 padflag = 0;
-        if (SvROK(sv_first)) {
-            if (!sv_derived_from(sv_first, "B::OP"))
-                Perl_croak(aTHX_ "Reference 'first' was not a B::OP object");
-            else {
-                IV tmp = SvIV((SV*)SvRV(sv_first));
-                first = INT2PTR(OP*, tmp);
-            }
-        } else if (SvTRUE(sv_first))
-            Perl_croak(aTHX_ 
-            "'first' argument to B::UNOP->new should be a B::OP object or a false value");
-        else
-            first = Nullop;
-        {
+  CODE:
+	I32 padflag = 0;
+	if (SvROK(sv_first)) {
+	  if (!sv_derived_from(sv_first, "B::OP"))
+		Perl_croak(aTHX_ "Reference 'first' was not a B::OP object");
+	  else {
+		IV tmp = SvIV((SV*)SvRV(sv_first));
+		first = INT2PTR(OP*, tmp);
+	  }
+	} else if (SvTRUE(sv_first))
+	  Perl_croak(aTHX_ 
+				 "'first' argument to B::UNOP->new should be a B::OP object or a false value");
+	else
+	  first = Nullop;
+	{
 
-	SAVE_VARS;
-        typenum = op_name_to_num(type);
-        o = newUNOP(typenum, flags, first);
-        OP_CUSTOM_OPS;
-        RESTORE_VARS;
-        }
-        ST(0) = sv_newmortal();
-        sv_setiv(newSVrv(ST(0), "B::UNOP"), PTR2IV(o));
+	  SAVE_VARS;
+	  typenum = op_name_to_num(type);
+	  {
+		COP *cop = PL_curcop;
+		PL_curcop = &PL_compiling;
+		o = newUNOP(typenum, flags, first);
+		PL_curcop = cop;
+	  }
+	  OP_CUSTOM_OPS;
+	  RESTORE_VARS;
+	}
+    ST(0) = sv_newmortal();
+    sv_setiv(newSVrv(ST(0), "B::UNOP"), PTR2IV(o));
 
 MODULE = B::Generate    PACKAGE = B::BINOP              PREFIX = BINOP_
 
 # XXX coverage 0
 void
 BINOP_null(o)
-        B::BINOP        o
-        CODE:
-                op_null((OP*)o);
+    B::BINOP        o
+  CODE:
+    op_null((OP*)o);
 
 # coverage 50%
 B::OP
 BINOP_last(o,...)
-        B::BINOP        o
-    CODE:
-        if (items > 1)
-            o->op_last = SVtoO(ST(1));	/* XXX coverage 0 */
-        RETVAL = o->op_last;
-    OUTPUT:
-        RETVAL
+	B::BINOP        o
+  CODE:
+	if (items > 1)
+	  o->op_last = SVtoO(ST(1));	/* XXX coverage 0 */
+	RETVAL = o->op_last;
+  OUTPUT:
+	RETVAL
 
 # coverage 50%
 void
@@ -997,7 +1007,10 @@ BINOP_new(class, type, flags, sv_first, sv_last)
         if (typenum == OP_SASSIGN || typenum == OP_AASSIGN) 
             o = newASSIGNOP(flags, first, 0, last);
         else {
+		    COP *cop = PL_curcop;
+		    PL_curcop = &PL_compiling;
             o = newBINOP(typenum, flags, first, last);
+		    PL_curcop = cop;
             OP_CUSTOM_OPS;
         }
 
@@ -1520,7 +1533,6 @@ COP_warnings(o)
 
 #endif
 
-
 */
 
 =cut
@@ -1635,7 +1647,7 @@ CV_newsub_simple(class, name, block)
 #ifdef HAVE_CV_CLONE
 # define PERL_CORE
 # include "embed.h"
-       
+
 # XXX coverage 0
 B::CV
 CV_NEW_with_start(cv, root, start)
@@ -1665,23 +1677,23 @@ MODULE = B::Generate    PACKAGE = B::PV         PREFIX = Sv
 # XXX coverage 0
 void
 SvPV(sv,...)
-        B::PV   sv
-    CODE:
-{
-  if(items > 1) {
-    sv_setpv(sv, SvPV_nolen(ST(1)));    
-  } 
-  ST(0) = sv_newmortal();
-  if( SvPOK(sv) ) { 
-    sv_setpvn(ST(0), SvPVX(sv), SvCUR(sv));
-    SvFLAGS(ST(0)) |= SvUTF8(sv);
+    B::PV   sv
+  CODE:
+  {
+	if(items > 1) {
+	  sv_setpv(sv, SvPV_nolen(ST(1)));    
+	} 
+	ST(0) = sv_newmortal();
+	if( SvPOK(sv) ) { 
+	  sv_setpvn(ST(0), SvPVX(sv), SvCUR(sv));
+	  SvFLAGS(ST(0)) |= SvUTF8(sv);
+	}
+	else {
+	  /* XXX for backward compatibility, but should fail */
+	  /* croak( "argument is not SvPOK" ); */
+	  sv_setpvn(ST(0), NULL, 0);
+	}
   }
-  else {
-    /* XXX for backward compatibility, but should fail */
-    /* croak( "argument is not SvPOK" ); */
-    sv_setpvn(ST(0), NULL, 0);
-  }
-}
 
 BOOT:
     specialsv_list[0] = Nullsv;

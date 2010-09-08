@@ -24,8 +24,10 @@ if ( $broken_plat and $] > 5.009 ) {
   print "
 Warning: Perl 5.10 effectively removed B::Generate support
 by privatizing some essential libperl functions, which is fatal
-with strict linkers.
-You can only use a subset of B::Generate functionality. (CPAN #28912)
+with strict linkers or a static libperl.
+You can only use a subset of B::Generate functionality (CPAN #28912):
+op->convert does not fold constants as the BINOP->new and UNOP->new counterparts,
+cv->NEW_with_start disabled.
 
 ";
 } elsif ( $ENV{PERL_DL_NONLAZY} and $] > 5.009 ) {
@@ -129,7 +131,7 @@ EOF
 }
 
 unless ($broken_plat) {
-  END { unlink "a.out", "test.exe", "test$obj", "test.c"; };
+  END { unlink "a.out", "a.exe", "test.exe", "test$obj", "test.c"; };
   $ccflags .= " -DHAVE_PAD_ALLOC"
     if checkexport("Perl_pad_alloc(aTHX_ 0, SVs_PADTMP)");
   $ccflags .= " -DHAVE_CV_CLONE"
@@ -202,8 +204,8 @@ Generate.c.gcov Generate.xs.gcov : Generate.xs
 
 cover_db/Generate-xs.html : Generate.xs.gcov
 	PERL5OPT=-MDevel::Cover make test
-	-gcov2perl Generate.c.gcov Generate.xs.gcov
-	cover
+	-$^X -S gcov2perl Generate.c.gcov Generate.xs.gcov
+	$^X -S cover
 
 gprof :
 	\$(MAKE) CCFLAGS=\"\$(CCFLAGS) -pg\" LDDLFLAGS=\"\$(LDDLFLAGS) -pg\"

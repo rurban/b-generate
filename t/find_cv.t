@@ -1,0 +1,29 @@
+#!perl
+# Improve test coverage
+#   make gcov; grep -- '####' *.gcov
+
+use Test::More tests => 3;
+use B;
+
+use_ok 'B::Generate';
+
+# find_cv_by_root: PL_compcv && SvTYPE(PL_compcv) == SVt_PVCV &&
+#                  !PL_eval_root && SvROK(PL_compcv)
+# called by: op->find_cv
+my $start = B::main_start;
+my $cv = B::main_cv;
+my $x;
+
+use constant d => 10;
+
+ok(${$start->find_cv} == $$cv, "start->find_cv $cv");
+for ( $x = $start;
+      $x->can("type") ? B::opnumber("const") ne $x->type : 0;
+      $x=$x->next
+    ) {};
+my $const = $x->find_cv;
+ok($$const == $$cv, "const->find_cv $const");
+
+#my $cv_pad = B::cv_pad($cv);
+#ok($cv_pad, "cv_pad $cv_pad");
+

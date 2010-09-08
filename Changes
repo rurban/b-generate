@@ -1,5 +1,10 @@
 Revision history for Perl extension B::Generate.
 
+1.33 - (Reini Urban)
+   - added t/find_cv.t
+   - improved overall test coverage from 30% to 40%
+   - precise limitation warning
+
 1.3202 - (Reini Urban)
    - Fix a few assertion errors PL_curcop == &PL_compiling
    - Reformat some XS funcs 
@@ -14,7 +19,8 @@ Revision history for Perl extension B::Generate.
    - Check each unsupported function better and extra
    - B::CV->NEW_with_start disabled with strict linkers 
      fixes Can't locate object method "NEW_with_start"
-   - Do not hardcode exported B OPf_ flags, so we don't really need to test for sameness.
+   - Do not hardcode exported B OPf_ flags, so we don't really need 
+     to test for sameness.
      We keep the tests for reference.
 
 1.31 - (Reini Urban)

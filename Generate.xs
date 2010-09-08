@@ -171,7 +171,7 @@ set_active_sub(SV *sv)
         croak("set_active_sub_root: !CvPADLIST(SvRV(sv))");
     }
     svp = AvARRAY(padlist);
-    my_current_pad = AvARRAY((AV*)svp[1]);
+    my_current_pad = AvARRAY((AV*)svp[1]); /* => GEN_PAD */
 }
 
 static SV *
@@ -587,26 +587,26 @@ B_main_start(...)
 SV *
 B_cv_pad(...)
     CV * old_cv = NO_INIT
-    PROTOTYPE: ;$
-    CODE:
+  PROTOTYPE: ;$
+  CODE:
 	old_cv = my_curr_cv;
-        if (items > 0) {
-            if (SvROK(ST(0))) {
-		IV tmp;
-                if (!sv_derived_from(ST(0), "B::CV"))
-                    Perl_croak(aTHX_ "Reference is not a B::CV object");
+    if (items > 0) {
+        if (SvROK(ST(0))) {
+            IV tmp;
+            if (!sv_derived_from(ST(0), "B::CV"))
+                Perl_croak(aTHX_ "Reference is not a B::CV object");
         	tmp = SvIV((SV*)SvRV(ST(0)));
-		my_curr_cv = INT2PTR(CV*,tmp);
-            } else {
-                my_curr_cv = NULL;
-            }
+            my_curr_cv = INT2PTR(CV*,tmp);
+        } else {
+            my_curr_cv = NULL;
         }
+    }
 
-	if ( old_cv) {
-            ST(0) = sv_newmortal();
-            sv_setiv(newSVrv(ST(0), "B::CV"), PTR2IV(old_cv));
+    if ( old_cv ) {
+        ST(0) = sv_newmortal();
+        sv_setiv(newSVrv(ST(0), "B::CV"), PTR2IV(old_cv));
 	} else {
-            ST(0) = &PL_sv_undef;
+        ST(0) = &PL_sv_undef;
 	}
 
 #define OP_desc(o)      (char* const)PL_op_desc[o->op_type]

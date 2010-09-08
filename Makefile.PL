@@ -35,7 +35,7 @@ cv->NEW_with_start disabled.
 Warning: CPAN #28912 Perl 5.10 effectively removed B::Generate support
 by privatizing some essential libperl functions, which is fatal
 with strict linkers.
-However it still works if do not set PERL_DL_NONLAZY, because those
+However it still works if you do not set PERL_DL_NONLAZY, because those
 functions are still in libperl - unices can access unexported functions
 in shared libs - until the next porter will remove it from there also.
 I've unset PERL_DL_NONLAZY for this test.

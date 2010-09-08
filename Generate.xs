@@ -17,7 +17,7 @@
 
 /* CPAN #28912: MSWin32 and AIX as only platforms do not export PERL_CORE functions,
    such as Perl_pad_alloc, Perl_cv_clone, fold_constants,
-   so disable this feature. cygwin gcc-3 --export-all-symbols was non-strict.
+   so disable this feature. cygwin gcc-3 --export-all-symbols was non-strict, gcc-4 is.
    POSIX with export PERL_DL_NONLAZY=1 also fails. This is checked in Makefile.PL
    but cannot be solved for clients adding it.
    TODO: Add the patchlevel here when it is fixed in CORE.
@@ -699,7 +699,7 @@ OP_targ(o, ...)
             o->op_targ = Perl_pad_alloc(aTHX_ 0, SVs_PADTMP);
 #else
             /* CPAN #28912: MSWin32 does not export Perl_pad_alloc.
-               Copied from Perl_pad_alloc for PADTMP:
+               Rewrite from Perl_pad_alloc for PADTMP:
                Scan the pad from PL_padix upwards for a slot which 
                has no name and no active value. */
             {
@@ -848,6 +848,7 @@ OP_mutate(o, type)
 # Introduced with change 34924, git change b7783a124ff
 # This works now only on non-MSWin32/AIX platforms and without PERL_DL_NONLAZY=1,
 # checked by DISABLE_PERL_CORE_EXPORTED
+# If you use such a platform, you have to fold the constants by yourself.
 
 #if defined(HAVE_FOLD_CONSTANTS) && (PERL_VERSION >= 11)
 #  define Perl_fold_constants S_fold_constants
@@ -876,8 +877,12 @@ OP_convert(o, type, flags)
 
         o = PL_check[type](aTHX_ (OP*)o);
 #ifdef HAVE_FOLD_CONSTANTS
-        if (o->op_type == type)
+	    if (o->op_type == type) {
+		    COP *cop = PL_curcop;
+		    PL_curcop = &PL_compiling;
             o = Perl_fold_constants(aTHX_ o);
+		    PL_curcop = cop;
+		}
 #endif
 
     OUTPUT:
@@ -1519,7 +1524,6 @@ COP_warnings(o)
 	RETVAL = newSVpv(o->cop_warnings, 0);
 
 #endif
-
 
 */
 

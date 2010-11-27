@@ -8,7 +8,7 @@ use B;
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.33';
+$VERSION = '1.34';
 
 {
     # 'no warnings' does not work.
@@ -46,7 +46,7 @@ sub linklist {
     return $o->next;
 }
 
-# XXX coverage: 0
+# coverage: scope.t
 sub append_elem {
     my ( $class, $type, $first, $last ) = @_;
     return $last  unless $first and $$first;
@@ -70,7 +70,7 @@ sub append_elem {
     return $first;
 }
 
-# XXX coverage: 0
+# coverage: scope.t
 sub prepend_elem {
     my ( $class, $type, $first, $last ) = @_;
     if ( $last->type() != $type ) {
@@ -95,7 +95,7 @@ sub prepend_elem {
     return $last;    # I cannot believe this works.
 }
 
-# XXX coverage: 0
+# coverage: scope.t
 sub scope {
     my $o = shift;
     return unless $o and $$o;
@@ -215,11 +215,12 @@ C<lineseq> op.
 Finally, you can set the main root and the starting op by passing ops
 to the C<B::main_root> and C<B::main_start> functions.
 
-This module can obviously be used for all sorts of fun purposes. The
-best one will be in conjuction with source filters; have your source
-filter parse an input file in a foreign language, create an op tree for
-it and get Perl to execute it. Then email me and tell me how you did it.
-And why.
+This module can obviously be used for all sorts of fun and optimizational
+purposes. One example will be in conjuction with source filters; have your
+source filter parse an input file in a foreign language, create an op tree for
+it and get Perl to execute it. Then email me and tell me how you did it.  And
+why.
+
 
 =head2 OTHER METHODS
 
@@ -253,13 +254,23 @@ overwriting the old C<next> pointers. You B<need> to do this once you've
 created an op tree for execution, unless you've carefully threaded it
 together yourself.
 
+=item $b_op->scope
+
+Create a surrounding scope for the b_op, "parenthesize" it.
+
+Creates on OPf_PARENS (alerady parenthesized by the parser) a
+full lineseq, enter, b_op, leave sequence.
+
+Otherwise just scope, b_op.
+
 =item $cv->NEW_with_start (root, start)
 
 Clone the C<cv> with new root and start ops. Note that contrary to C<cv_clone>,
 the PADLIST and pad index is kept, but the index might point to a different lexical,
 because the PADLIST indices will be different. See F<t/new_cv.t>.
 
-Warning: C<$cv->NEW_with_start> is disabled on B<MSWin32>, see CPAN RT#28912.
+Warning: C<$cv->NEW_with_start> is disabled on some strict platforms, like B<MSWin32>.
+See CPAN RT#28912.
 
 =item $b_op->targ ( [ targ] )
 

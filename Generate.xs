@@ -1021,7 +1021,7 @@ BINOP_new(class, type, flags, sv_first, sv_last)
 
 MODULE = B::Generate    PACKAGE = B::LISTOP             PREFIX = LISTOP_
 
-# XXX coverage 0
+# coverage scope.t
 void
 LISTOP_new(class, type, flags, sv_first, sv_last)
     SV * class

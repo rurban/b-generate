@@ -80,12 +80,13 @@ sub foo::baz {
     is( "lead", "gold", "Turn lead into gold" );
 }
 
-SKIP: {
-    skip( q(->seq was removed for 5.10), 1 ) if $] >= 5.010;
-    my $x = svref_2object(\&foo::baz);
-    my $op = $x->START;
-    my $y = $op->find_cv();
-    is($x->ROOT->seq, $y->ROOT->seq);
+{
+  my $x = svref_2object(\&foo::baz);
+  my $op = $x->START;
+  my $y = $op->find_cv();
+  $] < 5.010
+    ? is($x->ROOT->seq, $y->ROOT->seq)
+      : is(${$x->ROOT}, ${$y->ROOT});
 }
 
 {

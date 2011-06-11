@@ -1648,7 +1648,7 @@ CV_newsub_simple(class, name, block)
 # define PERL_CORE
 # include "embed.h"
 
-# XXX coverage 0
+# XXX coverage t/new_cv.t
 B::CV
 CV_NEW_with_start(cv, root, start)
        B::CV   cv

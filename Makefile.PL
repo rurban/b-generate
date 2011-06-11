@@ -5,6 +5,7 @@ use Config;
 use ExtUtils::Embed qw(ccopts ldopts);
 
 my $extracflags = '';
+my $verbose = grep {$_ eq '-v' } @ARGV;
 my $lddlflags = $Config{lddlflags};
 if ($^O eq 'darwin') {
   $lddlflags =~ s/-flat_namespace/-twolevel_namespace/;
@@ -25,6 +26,7 @@ if ( $broken_plat and $] > 5.009 ) {
 Warning: Perl 5.10 effectively removed B::Generate support
 by privatizing some essential libperl functions, which is fatal
 with strict linkers or a static libperl.
+
 You can only use a subset of B::Generate functionality (CPAN #28912):
 op->convert does not fold constants as the BINOP->new and UNOP->new counterparts,
 cv->NEW_with_start disabled.
@@ -35,10 +37,12 @@ cv->NEW_with_start disabled.
 Warning: CPAN #28912 Perl 5.10 effectively removed B::Generate support
 by privatizing some essential libperl functions, which is fatal
 with strict linkers.
+
 However it still works if you do not set PERL_DL_NONLAZY, because those
 functions are still in libperl - unices can access unexported functions
 in shared libs - until the next porter will remove it from there also.
 I've unset PERL_DL_NONLAZY for this test.
+
 If you need PERL_DL_NONLAZY add -DDISABLE_PERL_CORE_EXPORTED to CCFLAGS.
 
 ";
@@ -69,8 +73,8 @@ sub findexport {
 }
 
 my $obj = $Config{obj_ext};
+
 sub checkexport {
-  #return 1;
   my $sym = shift;
   open C, ">", "test.c";
   print C << "EOF";
@@ -81,24 +85,26 @@ sub checkexport {
 #include "XSUB.h"
 
 int main (int argc, char **argv) {
-pTHXx;
-$sym;
+  pTHXx;
+  $sym;
 }
 EOF
   close C;
 
   my $cflags = ccopts;
   my $exe = $Config{exe_ext};
-  my $redir = $^O eq 'MSWin32' ? "> NUL" : "2>&1 >/dev/null";
-  print "\nTesting export for $sym\n";
+  my $redir = $^O eq 'MSWin32' ? "> NUL" : "2>/dev/null >/dev/null";
+  my $psym = $sym; 
+  @_ ? $psym = shift : $psym =~ s/\n/ /g;
+  print "\nTesting libperl export for $psym\n";
 
   my $coredir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
   my $libdir  = "$Config{prefix}/lib";
   my $useshrplib = $Config{useshrplib};
   my $linkargs;
   if ($^O eq 'MSWin32' && $Config{cc} =~ m/^cl/i) {
-    my $cmd = "$Config{cc} $cflags -c";
-    print "$cmd\n";
+    my $cmd = "$Config{cc} $cflags -c $redir";
+    print "  $cmd\n" if $verbose;
     system($cmd);
     my $ok = ($? == 0) and -e "test.obj";
     return 0 unless $ok;
@@ -106,7 +112,7 @@ EOF
     $linkargs = ldopts("-std");
     $linkargs .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
     $cmd = "$Config{ld} test.obj $linkargs $redir";
-    print "$cmd\n";
+    print "  $cmd\n" if $verbose;
     system $cmd;
   }
   else {
@@ -122,22 +128,23 @@ EOF
       $linkargs = ExtUtils::Embed::ldopts('-std');
     }
     my $cmd = "$Config{cc} $ccflags -I$coredir test.c $linkargs $redir";
-    print "$cmd\n";
+    print "  $cmd\n" if $verbose;
     system $cmd;
   }
   my $ok = $? == 0;
-  print $ok ? " ok\n" : " not found\n";
+  print $ok ? "ok" : "not found";
   return $ok;
 }
 
 unless ($broken_plat) {
   END { unlink "a.out", "a.exe", "test.exe", "test$obj", "test.c"; };
   $ccflags .= " -DHAVE_PAD_ALLOC"
-    if checkexport("Perl_pad_alloc(aTHX_ 0, SVs_PADTMP)");
+    if checkexport("Perl_pad_alloc(aTHX_ 0, SVs_PADTMP)", "pad_alloc");
   $ccflags .= " -DHAVE_CV_CLONE"
-    if checkexport("CV* cv;\nPerl_cv_clone(aTHX_ cv)");
+    if checkexport("CV* cv;\nPerl_cv_clone(aTHX_ cv)", "cv_clone");
   $ccflags .= " -DHAVE_FOLD_CONSTANTS"
-    if checkexport("OP* o;\n".($]<5.011?"Perl":"S")."_fold_constants(aTHX_ o)");
+    if checkexport("OP* o;\n".($]<5.011?"Perl":"S")."_fold_constants(aTHX_ o)",
+		   "fold_constants");
   print "\n";
 } # else -DDISABLE_PERL_CORE_EXPORTED
 

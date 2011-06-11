@@ -1,18 +1,19 @@
 #!perl -w
 use strict;
+BEGIN {
+  require B::Generate;
+  B::Generate->import;
+  no strict 'refs'; 
+  unless (exists ${'B::CV::'}{'NEW_with_start'}) { 
+    print "1..0 #skip no cv_clone"; exit; 
+  }
+  if (eval "$B::VERSION" < '1.09') {
+    print "1..0 #skip B::CV->NEW_with_start requires B 1.09";
+  }
+}
 use Test::More tests => 26;
-use B::Generate;
 use B::Terse;
-use strict;
 no warnings 'void';
-
-SKIP: {
-    if ($^O =~/MSWin32|AIX|cygwin/ or $ENV{PERL_DL_NONLAZY}) {
-        skip "B::CV->NEW_with_start disabled with strict linkers", 26;
-    }
-    if (eval "$B::VERSION" < '1.09') {
-        skip "B::CV->NEW_with_start requires B 1.09", 26;
-    }
 
 my $DEBUG;
 my $orz;
@@ -120,4 +121,3 @@ is($b, 2, 'b is 2');
 # dumps core at END with 5.8.6 and lower
 # END { undef $orz; }
 
-}

@@ -1,4 +1,8 @@
-Revision history for Perl extension B::Generate.
+Revision history for the Perl extension B::Generate.
+
+1.35 - (Reini Urban)
+   - fixed t/new_cv.t
+   - improved Makefile.PL
 
 1.34 - (Reini Urban)
    - enabled old basic find_cv test (seq workaround)

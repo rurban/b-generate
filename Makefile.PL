@@ -174,6 +174,7 @@ WriteMakefile
       },
      }
     ) : ()),
+    SIGN => 1
   );
 
 

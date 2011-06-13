@@ -12,6 +12,7 @@ use_ok 'B';
 # release-dependent values, which we reverify using B-Gen in 2nd test
 
 my %list_nums = (
+    148 => "5.015000",  # added transr and aelemfast_lex, new ops starting with 36
     146 => "5.012000",
     146 => "5.011001",  # added boolkeys to 141 with 2e0eeeaafce11cb0128
     145 => "5.011000",

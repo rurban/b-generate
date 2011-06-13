@@ -1,5 +1,8 @@
 Revision history for the Perl extension B::Generate.
 
+1.36 - (Reini Urban)
+   - t/op_list.t: added two more ops for 5.15
+
 1.35 - (Reini Urban)
    - fixed t/new_cv.t
    - improved Makefile.PL

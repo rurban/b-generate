@@ -8,6 +8,7 @@ MANIFEST
 META.yml
 README
 t/basic.t
+t/const.t
 t/find_cv.t
 t/new_cv.t
 t/op_list.t

@@ -1,5 +1,11 @@
 Revision history for the Perl extension B::Generate.
 
+1.37 - (Reini Urban)
+   - t/const.t: test SVOP->new "const" (from Devel::BeginLift)
+   - improved SVOP->sv() read-only case: no GEN_PAD needed
+   - XS internal: harmonize croak usage
+   -   renamed OP_CUSTOM_OPS to CHECK_CUSTOM_OPS
+
 1.36 - (Reini Urban)
    - t/op_list.t: added two more ops for 5.15
 

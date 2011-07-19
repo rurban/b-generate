@@ -8,7 +8,7 @@ use B;
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.36';
+$VERSION = '1.37';
 
 {
     # 'no warnings' does not work.
@@ -163,10 +163,10 @@ Patches welcome.
 
 =head1 DESCRIPTION
 
-Malcolm Beattie's C<B> module allows you to examine the Perl op tree at
-runtime, in Perl space; it's the basis of the Perl compiler. But what it
-doesn't let you do is manipulate that op tree: it won't let you create
-new ops, or modify old ones. Now you can.
+The C<B> module allows you to examine the Perl op tree at
+runtime, in Perl space; it's the basis of the Perl compiler.
+But what it doesn't let you do is manipulate that op tree: it
+won't let you create new ops, or modify old ones. Now you can.
 
 Well, if you're intimately familiar with Perl's internals, you can.
 
@@ -187,15 +187,16 @@ create new ops. This is where it gets really hairy.
     new B::BINOP  ( type, flags, first, last )
     new B::LOGOP  ( type, flags, first, other )
     new B::LISTOP ( type, flags, first, last )
+    new B::SVOP   ( type, flags, sv )
     new B::COP    ( flags, name, first )
 
 In all of the above constructors, C<type> is either a numeric value
-representing the op type (C<62> is the addition operator, for instance)
-or the name of the op. (C<"add">)
+representing the op type (C<62> is the addition operator in certain
+perl versions, for instance) or the name of the op. (C<"add">)
 
-(Incidentally, if you know about custom ops and have registed them
-properly with the interpreter, you can create custom ops by name: 
-C<new B::OP("mycustomop",0)>, or whatever.)
+Incidentally, if you know about custom ops and have registed them
+properly with the interpreter, you can create custom ops by name:
+C<new B::OP("mycustomop",0)>, or whatever.
 
 C<first>, C<last> and C<other> are ops to be attached to the current op;
 these should be C<B::OP> objects. If you haven't created the ops yet,
@@ -262,6 +263,11 @@ Creates on OPf_PARENS (alerady parenthesized by the parser) a
 full lineseq, enter, b_op, leave sequence.
 
 Otherwise just scope, b_op.
+
+=item B::SVOP->new_svrv ( type, flags, sv )
+
+Similar to B::SVOP->new ( type, flags, sv ), it
+just creates a new SVOP with an attached sv as SvRV to the given sv.
 
 =item $cv->NEW_with_start (root, start)
 

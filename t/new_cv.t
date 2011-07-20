@@ -1,6 +1,10 @@
 #!perl -w
 use strict;
 BEGIN {
+  if ($] < 5.008001) {
+    print "1..0 #skip B::CV->NEW_with_start requires perl 5.8.1";
+    exit;
+  }
   require B::Generate;
   B::Generate->import;
   no strict 'refs'; 

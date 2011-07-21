@@ -1706,8 +1706,7 @@ BOOT:
     specialsv_list[1] = &PL_sv_undef;
     specialsv_list[2] = &PL_sv_yes;
     specialsv_list[3] = &PL_sv_no;
-    /* These are supposed to be (STRLEN*) so I cheat. Hope
-       it doesn't matter. */
+    /* These are supposed to be (STRLEN*) so I cheat. */
     specialsv_list[4] = (SV*)pWARN_ALL;
     specialsv_list[5] = (SV*)pWARN_NONE;
     specialsv_list[6] = (SV*)pWARN_STD;

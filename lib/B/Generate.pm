@@ -16,7 +16,7 @@ $VERSION = '1.37';
         return if $_[0] =~ /Subroutine B(?:::\w+)+ redefined/;
         warn $_[0];
     };
-    B::Generate->bootstrap($VERSION);
+    bootstrap B::Generate $VERSION;
 }
 
 package

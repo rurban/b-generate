@@ -2,10 +2,9 @@
 # Improve test coverage
 #   make gcov; grep -- '####' *.gcov
 
-use Test::More tests => 3;
+use Test::More tests => 2;
 use B;
-
-use_ok 'B::Generate';
+use B::Generate;
 
 # find_cv_by_root: PL_compcv && SvTYPE(PL_compcv) == SVt_PVCV &&
 #                  !PL_eval_root && SvROK(PL_compcv)

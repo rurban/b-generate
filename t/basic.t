@@ -1,16 +1,16 @@
 #!/usr/bin/perl -w
 
-use Test::More tests => 10;
+use Test::More tests => 9;
 
 use B qw(svref_2object);
-BEGIN { use_ok 'B::Generate'; }
-use Config;
-# $DEBUG = 1;
+use B::Generate;
+#use Config;
 
 # With threaded perl optree changes are only allowed during BEGIN or CHECK
-# CHECK
+CHECK
 {
     my ($x, $y,$z);
+    my $DEBUG = 1;
 
     # Replace addition with subtraction
 
@@ -19,12 +19,15 @@ use Config;
     my $add = B::opnumber("add");
     my $const = B::opnumber("const");
     for ($x = B::main_start; # Find "add", skip NULL
-         $x->type != $add;
+         #ref($x) eq 'B::NULL' ? 0 : 
+	 $x->type != $add;
          $x=$x->next)
     {
         # $x->dump if $DEBUG;
         $y=$x;  # $y is the op before "add"
     };
+    diag "found first add";
+    $y->next->dump if $DEBUG;
     $z = B::BINOP->new("subtract",0,$x->first, $x->last); # Create replacement "subtract"
 
     $z->next($x->next); # Copy add's "next" across.
@@ -32,12 +35,14 @@ use Config;
     $z->targ($x->targ);
 
     # Turn const(IV 30) into 13
-    for($x = B::main_start;
-        $x->type != $const or $x->sv->sv ne 30;
+    for(;# $x = B::main_start;
+        #ref($x) eq 'B::NULL' ? 0 : 
+	($x->type != $const or $x->sv->sv ne 30);
         $x=$x->next)
     {
-        # $x->dump if $DEBUG;
+        $x->dump if $DEBUG;
     }
+    diag "found const(IV 30)";
     ref($x) ne 'B::NULL' and $x->sv(13) and diag "changed add - const(IV 30) into 13";
 
     # Turn "bad" into "good" in &$foo
@@ -47,11 +52,11 @@ use Config;
     {
         $x->dump if $DEBUG;
         # there are 3 const args in &$foo after pushmark
-        if ( $Config{useithreads} and $x->type == $const and ref($x->sv) ne 'B::SPECIAL' ) {
-          diag "const(",$x->sv,")";
-          diag "const(",$x->sv->sv,")";
+        #if ( $Config{useithreads} and $x->type == $const and ref($x->sv) ne 'B::SPECIAL' ) {
+        #  diag "const(",$x->sv,")";
+        #  diag "const(",$x->sv->sv,")";
           #diag "const(PV ",$x->sv->PV,")" if $x->sv->can('PV');
-        }
+        #}
         if ($x->type == $const and ref($x->sv) ne 'B::SPECIAL' and $x->sv->sv eq "bad") {
           $x->dump if $DEBUG;
           $x->sv("good");

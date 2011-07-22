@@ -24,6 +24,9 @@ package
 use constant OP_LIST    => B::opnumber("list");
 use B qw(OPf_PARENS OPf_KIDS);
 
+# for convenience
+sub B::NULL::type { 0 };
+
 # This is where we implement op.c in Perl. Sssh.
 # XXX coverage: 0
 sub linklist {

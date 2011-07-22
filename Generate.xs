@@ -124,10 +124,9 @@ SV** tmp_pad;
 
 HV* root_cache;
 
-#define GEN_PAD      { set_active_sub(find_cv_by_root((OP*)o));tmp_pad = PL_curpad;PL_curpad = my_current_pad; }
+#define GEN_PAD  { set_active_sub(find_cv_by_root((OP*)o));tmp_pad = PL_curpad;PL_curpad = my_current_pad;}
+#define GEN_PAD_CV(cv) { set_active_sub(cv);tmp_pad = PL_curpad;PL_curpad = my_current_pad;}
 #define OLD_PAD      (PL_curpad = tmp_pad)
-/* #define GEN_PAD */
-/* #define OLD_PAD */
 
 #define SAVE_VARS \
 { \
@@ -159,16 +158,16 @@ HV* root_cache;
 void
 set_active_sub(SV *sv)
 {
+    dTHX;
     AV* padlist;
     SV** svp;
-    /* dTHX; */
     /* sv_dump(SvRV(sv)); */
     padlist = CvPADLIST(SvRV(sv));
     if (!padlist) {
         dTHX;				/* XXX coverage 0 */
         sv_dump(sv);
         sv_dump((SV*)SvRV(sv));
-        croak("set_active_sub_root: !CvPADLIST(SvRV(sv))");
+        croak("set_active_sub: !CvPADLIST(SvRV(sv))");
     }
     svp = AvARRAY(padlist);
     my_current_pad = AvARRAY((AV*)svp[1]); /* => GEN_PAD */
@@ -181,15 +180,14 @@ find_cv_by_root(OP* o) {
   SV* key;
   HE* cached;
 
-  if (PL_compcv && SvTYPE(PL_compcv) == SVt_PVCV && !PL_eval_root)
-  {						/* XXX coverage 0 */
-      if (SvROK(PL_compcv)) {
-          sv_dump(SvRV(PL_compcv));
-          croak("find_cv_by_root: SvROK(PL_compcv)");
-      }
-      return newRV((SV*)PL_compcv);
+  if (PL_compcv && SvTYPE(PL_compcv) == SVt_PVCV && !PL_eval_root) {
+	/* XXX coverage 0 */
+	if (SvROK(PL_compcv)) {
+	  sv_dump(SvRV(PL_compcv));
+	  croak("find_cv_by_root: SvROK(PL_compcv)");
+	}
+	return newRV((SV*)PL_compcv);
   }
-
 
   if (!root_cache)
     root_cache = newHV();
@@ -204,7 +202,6 @@ find_cv_by_root(OP* o) {
     SvREFCNT_dec(key);
     return HeVAL(cached);
   }
-
 
   if (PL_main_root == root) {
     /* Special case, this is the main root */
@@ -348,109 +345,136 @@ custom_op_ppaddr(char *name)
 #endif
 
 static opclass
-cc_opclass(pTHX_ OP *o)
+cc_opclass(pTHX_ const OP *o)
 {
+    bool custom = 0;
+
     if (!o)
-        return OPc_NULL;
-    /* op_dump(o); */
+	return OPc_NULL;
+
     if (o->op_type == 0)
-        return (o->op_flags & OPf_KIDS) ? OPc_UNOP : OPc_BASEOP;
+	return (o->op_flags & OPf_KIDS) ? OPc_UNOP : OPc_BASEOP;
 
     if (o->op_type == OP_SASSIGN)
-        return ((o->op_private & OPpASSIGN_BACKWARDS) ? OPc_UNOP : OPc_BINOP);
+	return ((o->op_private & OPpASSIGN_BACKWARDS) ? OPc_UNOP : OPc_BINOP);
 
+    if (o->op_type == OP_AELEMFAST) {
+	if (o->op_flags & OPf_SPECIAL)
+	    return OPc_BASEOP;
+	else
 #ifdef USE_ITHREADS
-    if (o->op_type == OP_GV || o->op_type == OP_GVSV || o->op_type == OP_AELEMFAST)
-        return OPc_PADOP;
+	    return OPc_PADOP;
+#else
+	    return OPc_SVOP;
+#endif
+    }
+    
+#ifdef USE_ITHREADS
+    if (o->op_type == OP_GV || o->op_type == OP_GVSV 
+        || o->op_type == OP_RCATLINE)
+	return OPc_PADOP;
+#endif
+
+#ifdef PERL_CUSTOM_OPS
+    if (o->op_type == OP_CUSTOM)
+        custom = 1;
 #endif
 
     switch (PL_opargs[o->op_type] & OA_CLASS_MASK) {
     case OA_BASEOP:
-        return OPc_BASEOP;
+	return OPc_BASEOP;
 
     case OA_UNOP:
-        return OPc_UNOP;
+	return OPc_UNOP;
 
     case OA_BINOP:
-        return OPc_BINOP;
+	return OPc_BINOP;
 
     case OA_LOGOP:
-        return OPc_LOGOP;
+	return OPc_LOGOP;
 
     case OA_LISTOP:
-        return OPc_LISTOP;
+	return OPc_LISTOP;
 
     case OA_PMOP:
-        return OPc_PMOP;
+	return OPc_PMOP;
 
     case OA_SVOP:
-        return OPc_SVOP;
+	return OPc_SVOP;
 
     case OA_PADOP:
-        return OPc_PADOP;
+	return OPc_PADOP;
 
     case OA_PVOP_OR_SVOP:
         /*
-         * Character translations (tr///) are usually a PVOP, keeping a
+         * Character translations (tr///) are usually a PVOP, keeping a 
          * pointer to a table of shorts used to look up translations.
          * Under utf8, however, a simple table isn't practical; instead,
-         * the OP is an SVOP, and the SV is a reference to a swash
+         * the OP is an SVOP (or, under threads, a PADOP),
+         * and the SV is a reference to a swash
          * (i.e., an RV pointing to an HV).
          */
-        return (o->op_private & (OPpTRANS_TO_UTF|OPpTRANS_FROM_UTF))
-                ? OPc_SVOP : OPc_PVOP;
+	return (!custom &&
+		   (o->op_private & (OPpTRANS_TO_UTF|OPpTRANS_FROM_UTF))
+	       )
+#if  defined(USE_ITHREADS) \
+  && (PERL_VERSION > 8 || (PERL_VERSION == 8 && PERL_SUBVERSION >= 9))
+		? OPc_PADOP : OPc_PVOP;
+#else
+		? OPc_SVOP : OPc_PVOP;
+#endif
 
     case OA_LOOP:
-        return OPc_LOOP;
+	return OPc_LOOP;
 
     case OA_COP:
-        return OPc_COP;
+	return OPc_COP;
 
     case OA_BASEOP_OR_UNOP:
-        /*
-         * UNI(OP_foo) in toke.c returns token UNI or FUNC1 depending on
-         * whether parens were seen. perly.y uses OPf_SPECIAL to
-         * signal whether a BASEOP had empty parens or none.
-         * Some other UNOPs are created later, though, so the best
-         * test is OPf_KIDS, which is set in newUNOP.
-         */
-        return (o->op_flags & OPf_KIDS) ? OPc_UNOP : OPc_BASEOP;
+	/*
+	 * UNI(OP_foo) in toke.c returns token UNI or FUNC1 depending on
+	 * whether parens were seen. perly.y uses OPf_SPECIAL to
+	 * signal whether a BASEOP had empty parens or none.
+	 * Some other UNOPs are created later, though, so the best
+	 * test is OPf_KIDS, which is set in newUNOP.
+	 */
+	return (o->op_flags & OPf_KIDS) ? OPc_UNOP : OPc_BASEOP;
 
     case OA_FILESTATOP:
-        /*
-         * The file stat OPs are created via UNI(OP_foo) in toke.c but use
-         * the OPf_REF flag to distinguish between OP types instead of the
-         * usual OPf_SPECIAL flag. As usual, if OPf_KIDS is set, then we
-         * return OPc_UNOP so that walkoptree can find our children. If
-         * OPf_KIDS is not set then we check OPf_REF. Without OPf_REF set
-         * (no argument to the operator) it's an OP; with OPf_REF set it's
-         * an SVOP (and op_sv is the GV for the filehandle argument).
-         */
-        return ((o->op_flags & OPf_KIDS) ? OPc_UNOP :
+	/*
+	 * The file stat OPs are created via UNI(OP_foo) in toke.c but use
+	 * the OPf_REF flag to distinguish between OP types instead of the
+	 * usual OPf_SPECIAL flag. As usual, if OPf_KIDS is set, then we
+	 * return OPc_UNOP so that walkoptree can find our children. If
+	 * OPf_KIDS is not set then we check OPf_REF. Without OPf_REF set
+	 * (no argument to the operator) it's an OP; with OPf_REF set it's
+	 * an SVOP (and op_sv is the GV for the filehandle argument).
+	 */
+	return ((o->op_flags & OPf_KIDS) ? OPc_UNOP :
 #ifdef USE_ITHREADS
-                (o->op_flags & OPf_REF) ? OPc_PADOP : OPc_BASEOP);
+		(o->op_flags & OPf_REF) ? OPc_PADOP : OPc_BASEOP);
 #else
-                (o->op_flags & OPf_REF) ? OPc_SVOP : OPc_BASEOP);
+		(o->op_flags & OPf_REF) ? OPc_SVOP : OPc_BASEOP);
 #endif
     case OA_LOOPEXOP:
-        /*
-         * next, last, redo, dump and goto use OPf_SPECIAL to indicate that a
-         * label was omitted (in which case it's a BASEOP) or else a term was
-         * seen. In this last case, all except goto are definitely PVOP but
-         * goto is either a PVOP (with an ordinary constant label), an UNOP
-         * with OPf_STACKED (with a non-constant non-sub) or an UNOP for
-         * OP_REFGEN (with goto &sub) in which case OPf_STACKED also seems to
-         * get set.
-         */
-        if (o->op_flags & OPf_STACKED)
-            return OPc_UNOP;
-        else if (o->op_flags & OPf_SPECIAL)
-            return OPc_BASEOP;
-        else
-            return OPc_PVOP;
+	/*
+	 * next, last, redo, dump and goto use OPf_SPECIAL to indicate that a
+	 * label was omitted (in which case it's a BASEOP) or else a term was
+	 * seen. In this last case, all except goto are definitely PVOP but
+	 * goto is either a PVOP (with an ordinary constant label), an UNOP
+	 * with OPf_STACKED (with a non-constant non-sub) or an UNOP for
+	 * OP_REFGEN (with goto &sub) in which case OPf_STACKED also seems to
+	 * get set.
+	 */
+	if (o->op_flags & OPf_STACKED)
+	    return OPc_UNOP;
+	else if (o->op_flags & OPf_SPECIAL)
+	    return OPc_BASEOP;
+	else
+	    return OPc_PVOP;
     }
     warn("can't determine class of operator %s, assuming BASEOP\n",
-         PL_op_name[o->op_type]);
+	 OP_NAME(o));
     return OPc_BASEOP;
 }
 
@@ -1263,6 +1287,8 @@ PMOP_precomp(o)
 MODULE = B::Generate    PACKAGE = B::SVOP               PREFIX = SVOP_
 
 # coverage 50%
+# SVOP::sv(o, sv, cvref)
+# not-threaded ignore optional 2nd cvref arg
 B::SV
 SVOP_sv(o, ...)
         B::SVOP o
@@ -1270,7 +1296,15 @@ SVOP_sv(o, ...)
         SV *sv;
     CODE:
         if (items > 1) {
-            GEN_PAD;
+#ifdef USE_ITHREADS
+		    if (items > 2) {
+                if (!(SvROK(ST(2)) && SvTYPE(SvRV(ST(2))) == SVt_PVCV))
+                    croak("2nd arg is not a cvref");
+			    GEN_PAD_CV(ST(2));
+		    } else {
+                GEN_PAD;
+		    }
+#endif
             sv = newSVsv(ST(1));
 #ifdef USE_ITHREADS
             if ( cSVOPx(o)->op_sv ) {
@@ -1282,7 +1316,9 @@ SVOP_sv(o, ...)
 #else
             cSVOPx(o)->op_sv = sv;
 #endif
+#ifdef USE_ITHREADS
             OLD_PAD;
+#endif
         }
         RETVAL = cSVOPo_sv;
     OUTPUT:
@@ -1392,7 +1428,7 @@ PADOP_padix(o, ...)
         RETVAL
 
 B::SV
-PADOP_sv(o)
+PADOP_sv(o, ...)
         B::PADOP o
 
 B::GV

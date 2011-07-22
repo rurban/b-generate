@@ -1,11 +1,16 @@
 Revision history for the Perl extension B::Generate.
 
 1.37 - (Reini Urban)
+   - SVOP->sv: added 2nd optional arg cvref for threaded perls, the 
+     surrounding cv of the op
+   - make PADOP->sv writable
    - t/const.t: test SVOP->new "const" (from Devel::BeginLift)
-   - t/basic.t: fixed test 3 for ithreads, skip failing tests 5,6
-   - improved SVOP->sv() read-only case: no GEN_PAD needed
+   - t/basic.t: fixed ithreads tests 3,5,6.
+     const is an SVOP but it should be a PADOP really.
+   - improved SVOP->sv() read-only case: no GEN_PAD needed.
    - XS internal: harmonize croak usage
    -   renamed OP_CUSTOM_OPS to CHECK_CUSTOM_OPS
+   - updated cc_opclass from 5.15
 
 1.36 - (Reini Urban)
    - t/op_list.t: added two more ops for 5.15

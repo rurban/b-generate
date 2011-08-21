@@ -12,7 +12,7 @@ BEGIN {
     print "1..0 #skip no cv_clone"; exit; 
   }
   if (eval "$B::VERSION" < '1.09') {
-    print "1..0 #skip B::CV->NEW_with_start requires B 1.09";
+    print "1..0 #skip B::CV->NEW_with_start requires B 1.09"; exit;
   }
 }
 use Test::More tests => 26;

@@ -234,6 +234,7 @@ foo::baz();
 {
   my $x = svref_2object(\&foo::baz);
   my $op = $x->START;
+  diag "find_cv &foo::baz->START";
   my $y = $op->find_cv();
   $] < 5.010
     ? is($x->ROOT->seq, $y->ROOT->seq, "find_cv seq")

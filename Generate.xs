@@ -231,6 +231,7 @@ find_cv_by_root(OP* o) {
              CvROOT(sv) == root
              ) {
             cv = (CV*) sv;
+			goto out;
           } else if ( SvTYPE(sv) == SVt_PVGV &&
 #if PERL_VERSION >= 10
                      isGV_with_GP(sv) &&
@@ -240,6 +241,7 @@ find_cv_by_root(OP* o) {
                      CvROOT(GvCV(sv)) == root)
           {
               cv = (CV*) GvCV(sv);			/* XXX coverage 0 */
+			  goto out;
           }
         }
       }
@@ -248,7 +250,7 @@ find_cv_by_root(OP* o) {
     if (!cv) {
         croak("find_cv_by_root: couldn't find the root cv\n");	/* XXX coverage 0 */
     }
-
+  out:
     cached = hv_store_ent(root_cache, key, newRV((SV*)cv), 0);
   }
 
@@ -637,7 +639,7 @@ B_cv_pad(...)
 
 MODULE = B::Generate    PACKAGE = B::OP         PREFIX = OP_
 
-# XXX coverage 0
+# coverage: basic.t
 B::CV
 OP_find_cv(o)
         B::OP   o

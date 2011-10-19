@@ -12,15 +12,16 @@ use B::Generate;
 my $start = B::main_start;
 my $cv = B::main_cv;
 my $x;
+my $const = B::opnumber("const");
 
 use constant d => 10;
 
 ok(${$start->find_cv} == $$cv, "start->find_cv $cv");
 for ( $x = $start;
-      $x->can("type") ? B::opnumber("const") ne $x->type : 0;
-      $x=$x->next
+      $x->type != $const;
+      $x = $x->next
     ) {};
-my $const = $x->find_cv;
+$const = $x->find_cv;
 ok($$const == $$cv, "const->find_cv $const");
 
 #my $cv_pad = B::cv_pad($cv);

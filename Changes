@@ -1,5 +1,9 @@
 Revision history for the Perl extension B::Generate.
 
+1.38 - (Reini Urban)
+   - Generate.xs, t/find_cv.t: minor optimizations
+   - t/new_cv.t: skip with B < 1.09 [cpan#70397]
+
 1.37 - (Reini Urban)
    - SVOP->sv: added 2nd optional arg cvref for threaded perls, the 
      surrounding cv of the op

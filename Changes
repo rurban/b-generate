@@ -1,5 +1,9 @@
 Revision history for the Perl extension B::Generate.
 
+1.39 - (Reini Urban)
+   - removed B 1.09 dependency. Tested down to B 1.02 perl-5.8.4 but it was 
+     claimed to work down to perl-5.5.62
+
 1.38 - (Reini Urban)
    - Generate.xs, t/find_cv.t: minor optimizations
    - t/new_cv.t: skip with B < 1.09 [cpan#70397]

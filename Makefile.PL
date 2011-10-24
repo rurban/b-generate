@@ -154,7 +154,7 @@ WriteMakefile
    'VERSION_FROM'	=> 'lib/B/Generate.pm',
    'PREREQ_PM'	=>
    {
-    'B'                  => '1.09', # see rt29257 re OP_LIST
+    'B'                  => 0, # 1.09 for rt29257 re OP_LIST. tested down to 1.02 w/ perl5.8.4
     'ExtUtils::CBuilder' => 0,
     'ExtUtils::Embed'    => 0,
    },

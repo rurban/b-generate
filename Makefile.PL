@@ -10,7 +10,6 @@ my $lddlflags = $Config{lddlflags};
 if ($^O eq 'darwin') {
   $lddlflags =~ s/-flat_namespace/-twolevel_namespace/;
   $lddlflags =~ s/-undefined suppress/-undefined error/;
-  $lddlflags .= " $Config{archlibexp}/CORE/$Config{libperl}";
 }
 my $ccflags = $Config{ccflags};
 $ccflags .= " $extracflags";

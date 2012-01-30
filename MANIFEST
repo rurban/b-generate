@@ -5,7 +5,6 @@ lib/B/Generate.pm
 Generate.xs
 Makefile.PL
 MANIFEST
-META.yml
 README
 t/basic.t
 t/const.t

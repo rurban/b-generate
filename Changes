@@ -1,5 +1,9 @@
 Revision history for the Perl extension B::Generate.
 
+1.40 - (Reini Urban)
+   - Makefile.PL: darwin fixed by Chia-liang Kao. Tested ok on all
+     darwin perls but 5.6.2.
+
 1.39 - (Reini Urban)
    - removed B 1.09 dependency. Tested down to B 1.02 perl-5.8.4 but it was 
      claimed to work down to perl-5.5.62

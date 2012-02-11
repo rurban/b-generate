@@ -204,7 +204,7 @@ sub depend {
 README : \$(VERSION_FROM)
 	pod2text \$(VERSION_FROM) > README
 
-release : dist disttest
+release : dist
 	git commit -a -m\"release \$(VERSION)\"
 	git tag \$(VERSION)
 	cpan-upload \$(DISTVNAME).tar\$(SUFFIX)

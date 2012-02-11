@@ -1,5 +1,12 @@
 Revision history for the Perl extension B::Generate.
 
+1.41 - (Reini Urban)
+   - Generate.xs: fixed B::SVOP->sv [CPAN #70398] detected by Zefram
+   - t/cpan70398.t: new
+   - Generate.pm: do not import B
+   - Makefile.PL: add target release, make it easier to copy depends
+   - t/basic.t: fixed debug_const()
+
 1.40 - (Reini Urban)
    - Makefile.PL: darwin fixed by Chia-liang Kao. Tested ok on all
      darwin perls but 5.6.2.

@@ -18,6 +18,7 @@ $ccflags .= ' -DPERL_CUSTOM_OPS -DPERL_CUSTOM_OPCODES' if $] >= 5.008;
 # Modules using B::Generate should do the same. See also below at test()
 my $broken_plat = $^O =~ /MSWin32|AIX/;
 $broken_plat = 1 if $^O eq 'cygwin' and $Config{gccversion} =~ /^4\./;
+# XXX cygwin should work with -Wl,--export-all-symbols
 if ( $broken_plat and $] > 5.009 ) {
   # If you need PERL_DL_NONLAZY force this
   $ccflags .= " -DDISABLE_PERL_CORE_EXPORTED";
@@ -200,18 +201,24 @@ sub test {
 
 sub depend {
   "
-README : lib/B/Generate.pm
-	pod2text lib/B/Generate.pm > README
+README : \$(VERSION_FROM)
+	pod2text \$(VERSION_FROM) > README
 
-gcov : Generate.c.gcov Generate.xs.gcov cover_db/Generate-xs.html
+release : dist disttest
+	git commit -a -m\"release \$(VERSION)\"
+	git tag \$(VERSION)
+	cpan-upload \$(DISTVNAME).tar\$(SUFFIX)
+	git push --tags
 
-Generate.c.gcov Generate.xs.gcov : Generate.xs
+gcov : \$(BASEEXT).c.gcov \$(BASEEXT).gcov cover_db/\$(BASEEXT)-xs.html
+
+\$(BASEEXT).c.gcov \$(BASEEXT).xs.gcov : \$(BASEEXT).xs
 	\$(MAKE) CCFLAGS=\"\$(CCFLAGS) -fprofile-arcs -ftest-coverage\" LDDLFLAGS=\"\$(LDDLFLAGS) -fprofile-arcs -ftest-coverage\"
-	gcov Generate.c Generate.xs
+	gcov \$(BASEEXT).c \$(BASEEXT).xs
 
-cover_db/Generate-xs.html : Generate.xs.gcov
+cover_db/\$(BASEEXT)-xs.html : \$(BASEEXT).xs.gcov
 	PERL5OPT=-MDevel::Cover make test
-	-$^X -S gcov2perl Generate.c.gcov Generate.xs.gcov
+	-$^X -S gcov2perl \$(BASEEXT).c.gcov \$(BASEEXT).xs.gcov
 	$^X -S cover
 
 gprof :

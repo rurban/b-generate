@@ -8,15 +8,21 @@ use Test::More tests => 9;
 use B qw(svref_2object);
 use B::Generate;
 # use B::Flags;
-use Config;
+use Config ();
 
-sub debug_const { # XXX unused. bizarre copy of ARRAY in entersub
-  my $x = shift;
-  my $pad = shift;
+sub debug_const {
+  my $x = $_[0];
+  my $pad = $_[1]; # only needd threaded
+  #diag "const ",ref($x); #," (",$x->flagspv,") ",$x->privatepv;
   my $sv = !${$x->sv} ? $pad->[$x->targ] : $x->sv;
-  diag "const ",ref($x);
-  diag "const->sv ",ref($x->sv);
-  diag "pad[",ref $sv," ",ref($sv) !~ /^B::(NULL|SPECIAL)$/ ? $sv->sv :'undef',"]t",$x->targ;
+  #diag "const->sv ",ref($sv);
+  my $val = ref($sv) eq 'B::SPECIAL' ? ["Null", "sv_undef", "sv_yes", "sv_no"]->[${$sv}]
+    : (ref($sv) eq 'B::NULL' ? 'undef' : $sv->sv);
+  if (!${$x->sv}) {
+    diag "const pad[",ref($sv)," ",$val,"]/t",$x->targ;
+  } else {
+    diag "const gv[",ref($sv)," ",$val,"]";
+  }
 }
 
 # With a threaded perl optree changes are only allowed during BEGIN or CHECK
@@ -51,22 +57,14 @@ CHECK
     $x = $y->next->next;
     diag "search for const(IV 30) after the add";
     if ($Config::Config{useithreads}) {
-      $DEBUG = 0;
+      # $DEBUG = 1;
       my $cv = B::main_cv;
       my @pad = (($cv->PADLIST->ARRAY)[1]->ARRAY);
       # threaded: const SVOP: if ->op_sv=B:NULL => PAD, else ->sv
       while ($$x) {
         if ($x->type == $const) {
+	  debug_const($x, \@pad) if $DEBUG;
 	  my $sv = $pad[$x->targ];
-	  #my $sv = !${$x->sv} ? $pad[$x->targ] : $x->sv;
-          #my $sv = (ref($x->sv) eq 'B::NULL') ? $pad[$x->targ] : $x->sv;
-	  if ($DEBUG) {
-	    diag "const ",ref($x);
-	    diag "const->sv ",ref($x->sv);
-            my $val = ref($sv) eq 'B::SPECIAL' ? ["Null", "sv_undef", "sv_yes", "sv_no"]->[${$sv}]
-              : (ref($sv) eq 'B::NULL' ? 'undef' : $sv->sv);
-            diag "pad[",ref $sv," ",$val,"]/t",$x->targ;
-	  }
 	  if ( ref($sv) ne 'B::NULL' and $sv->sv eq 30 ) {
 	    diag "found const(IV 30)";
 	    $x->sv(13) and diag "changed add - const(IV 30) into 13";
@@ -123,22 +121,14 @@ CHECK
 
     diag "search for const(PV 'bad') in ANON &$foo";
     if ($Config::Config{useithreads}) {
-      $DEBUG = 0;
+      # $DEBUG = 1;
       my $cv = svref_2object($foo);
       my @pad = (($cv->PADLIST->ARRAY)[1]->ARRAY);
       $x = $cv->START;
       while ($$x) {
         if ($x->type == $const) { # SVOP
+	  debug_const($x, \@pad) if $DEBUG;
 	  my $sv = $pad[$x->targ];
-	  #my $sv = !${$x->sv} ? $pad[$x->targ] : $x->sv;
-	  #my $ix = ref($x) eq "B::SVOP" ? $x->targ : $x->padix;
-	  #my $sv = (ref($x) eq "B::PADOP" or !${$x->sv}) ? $pad[$ix] : $x->sv;
-	  #my $sv = $x->sv;
-	  if ($DEBUG) {
-	    diag "const ",ref($x);
-	    diag "const->sv ",ref($x->sv);
-            diag "pad[",ref $sv," ",ref($sv) !~ /^B::(NULL|SPECIAL)$/ ? $sv->sv :'undef',"]t",$x->targ;
-	  }
 	  if ( ref($sv) ne 'B::NULL' and $sv->sv eq 'bad' ) {
 	    $x->sv("good", $foo);
 	    diag "changed 'bad' into 'good'";
@@ -164,45 +154,31 @@ CHECK
       }
     }
 }
-
 $foo->();
+
 sub foo::baz {
     my $s = "Turn lead into gold in a sub";
     #$Config::Config{useithreads}
     #  ? pass( "TODO ".$s ) :
-      is( "lead", "gold", $s );
+    is( "lead", "gold", $s );
 }
-
 CHECK
 {
     my ($x,$y,$z);
     # $DB::single=1 if defined &DB::DB;
-    my $DEBUG = 1;
+    my $DEBUG = 0;
     my $const = B::opnumber("const");
 
     diag "search for const(PV 'lead') in &foo::baz";
     if ($Config::Config{useithreads}) {
-      $DEBUG = 1;
+      $DEBUG = 0;
       my $cv = svref_2object(\&foo::baz);
       my @pad = (($cv->PADLIST->ARRAY)[1]->ARRAY); # depth=1?
-      #diag "cv ",ref($cv)," (",$cv->flagspv,")";
-      #my $s = ""; 
-      #for my $p (@pad) {$s .= ref($p) =~ /B::?V*/ ? $p->sv : $p};
-      #diag "pad ",@pad,": ",$s;
       $x = $cv->START;
       while ($$x) {
         if ($x->type == $const) {
-          # see op.h:cSVOPx_sv
-	  #my $sv = !${$x->sv} ? $pad[$x->targ] : $x->sv;
-	  my $sv = $pad[$x->targ];
-	  #my $sv = (ref $x->sv =~ /^B::(NULL|SPECIAL)$/) ? $pad[$x->targ] : $x->sv;
-	  if ($DEBUG) {
-	    diag "const ",ref($x); #," (",$x->flagspv,") ",$x->privatepv;
-	    diag "const->sv ",ref($x->sv);
-            my $val = ref($sv) eq 'B::SPECIAL' ? ["Null", "sv_undef", "sv_yes", "sv_no"]->[${$sv}]
-              : (ref($sv) eq 'B::NULL' ? 'undef' : $sv->sv);
-            diag "pad[",ref $sv," ",$val,"]/t",$x->targ;
-	  }
+	  debug_const($x, \@pad) if $DEBUG;
+	  my $sv = !${$x->sv} ? $pad[$x->targ] : $x->sv;
 	  if ( ref($sv) =~ /^B::PV/ and $sv->sv eq 'lead' ) {
 	    diag $x->sv("gold", \&foo::baz); # may fail
 	    diag "changed 'lead' into 'gold'";
@@ -228,7 +204,6 @@ CHECK
       }
     }
 }
-
 foo::baz();
 
 {

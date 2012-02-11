@@ -1290,7 +1290,10 @@ MODULE = B::Generate    PACKAGE = B::SVOP               PREFIX = SVOP_
 
 # coverage 50%
 # SVOP::sv(o, sv, cvref)
-# not-threaded ignore optional 2nd cvref arg
+# not-threaded ignore optional 2nd cvref arg.
+# threaded only allow my variables, not TMP nor OUR.
+# XXX [CPAN #70398] B::SVOP->sv broken by B::Generate.
+# bad sideeffect polluting Concise when reading
 B::SV
 SVOP_sv(o, ...)
         B::SVOP o
@@ -1313,6 +1316,7 @@ SVOP_sv(o, ...)
                 cSVOPx(o)->op_sv = sv;		/* XXX coverage 0 */
             }
             else {
+			    assert(SvTYPE(sv) & SVs_PADMY);
                 PAD_SVl(o->op_targ) = sv;
             }
 #else
@@ -1322,6 +1326,7 @@ SVOP_sv(o, ...)
             OLD_PAD;
 #endif
         }
+        /* [CPAN #70398] */
         RETVAL = cSVOPo_sv;
     OUTPUT:
         RETVAL

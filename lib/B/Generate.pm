@@ -3,12 +3,12 @@ package B::Generate;
 require 5.005_62;
 use strict;
 use warnings;
-use B;
+use B ();
 
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.40';
+$VERSION = '1.41';
 
 {
     # 'no warnings' does not work.
@@ -230,16 +230,16 @@ why.
 
 =over 3
 
-=item  $b_sv->sv
+=item  B::SVOP->sv()
 
-Returns a real SV instead of a C<B::SV>. For instance:
+Returns the SV value instead of the C<B::SV> object. For instance:
 
     $b_sv = $svop->sv;
     if ($b_sv->sv == 3) {
         print "SVOP's SV has an IV of 3\n"
     }
 
-You can't use this to set the SV. That would be scary.
+But to set the SV you need a proper B::SV object.
 
 =item $op->dump
 

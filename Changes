@@ -1,5 +1,10 @@
 Revision history for the Perl extension B::Generate.
 
+1.42 - (Reini Urban)
+   - Generate.xs: fixed B::COP->warnings [CPAN #70396] detected by Zefram
+   - t/cpan70396.t: new
+   - Makefile.PL: make release: add git push
+
 1.41 - (Reini Urban)
    - Generate.xs: fixed B::SVOP->sv [CPAN #70398] detected by Zefram
    - t/cpan70398.t: new

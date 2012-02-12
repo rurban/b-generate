@@ -208,6 +208,7 @@ release : dist
 	git commit -a -m\"release \$(VERSION)\"
 	git tag \$(VERSION)
 	cpan-upload \$(DISTVNAME).tar\$(SUFFIX)
+	git push
 	git push --tags
 
 gcov : \$(BASEEXT).c.gcov \$(BASEEXT).gcov cover_db/\$(BASEEXT)-xs.html

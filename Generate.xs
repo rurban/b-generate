@@ -1541,7 +1541,11 @@ COP_line(o)
 
 =pod
 
-/* TODO: This throws a warning that cop_warnings is (STRLEN*)
+/*
+   Disable this wrong B::COP->warnings [CPAN #70396]
+   Use the orginal B version instead.
+
+   TODO: This throws a warning that cop_warnings is (STRLEN*)
    while I am casting to (SV*). The typedef converts special
    values of (STRLEN*) into SV objects. Hope the initial pointer
    casting isn't a problem.
@@ -1550,8 +1554,6 @@ COP_line(o)
    B.xs, but avoids calling the static function added there.
    XXX: maybe de-static that function
  */
-
-=cut
 
 #if PERL_VERSION < 11
 
@@ -1566,6 +1568,8 @@ COP_warnings(o)
         B::COP  o
 
 #endif
+
+=cut
 
 =pod
 

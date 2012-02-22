@@ -1,5 +1,8 @@
 Revision history for the Perl extension B::Generate.
 
+1.43 - (Reini Urban)
+   - t/cpan70398.t: Windows quote fix
+
 1.42 - (Reini Urban)
    - Generate.xs: disable B::COP->warnings [CPAN #70396] detected by Zefram
    - t/cpan70396.t: new

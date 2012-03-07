@@ -111,7 +111,7 @@ static char *opclassnames[] = {
 
 static int walkoptree_debug = 0; /* Flag for walkoptree debug hook */
 
-static SV *specialsv_list[6];
+static SV *specialsv_list[7];    /* 0-6 */
 
 AV * tmp_comppad, * tmp_comppad_name;
 I32 tmp_padix, tmp_reset_pending;

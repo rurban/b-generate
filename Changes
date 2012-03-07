@@ -1,5 +1,9 @@
 Revision history for the Perl extension B::Generate.
 
+1.44 - (Reini Urban)
+   - Generate.xs: global-buffer-overflow detected by AddressSanitizer:
+     specialsv_list[7] for 0-6
+
 1.43 - (Reini Urban)
    - t/cpan70398.t: Windows quote fix
 

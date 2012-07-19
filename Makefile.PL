@@ -14,64 +14,6 @@ if ($^O eq 'darwin') {
 my $ccflags = $Config{ccflags};
 $ccflags .= " $extracflags";
 $ccflags .= ' -DPERL_CUSTOM_OPS -DPERL_CUSTOM_OPCODES' if $] >= 5.008;
-
-# Modules using B::Generate should do the same. See also below at test()
-my $broken_plat = $^O =~ /MSWin32|AIX/;
-$broken_plat = 1 if $^O eq 'cygwin' and $Config{gccversion} =~ /^4\./;
-# XXX cygwin should work with -Wl,--export-all-symbols
-if ( $broken_plat and $] > 5.009 ) {
-  # If you need PERL_DL_NONLAZY force this
-  $ccflags .= " -DDISABLE_PERL_CORE_EXPORTED";
-  print "
-Warning: Perl 5.10 effectively removed B::Generate support
-by privatizing some essential libperl functions, which is fatal
-with strict linkers or a static libperl.
-
-You can only use a subset of B::Generate functionality (CPAN #28912):
-op->convert does not fold constants as the BINOP->new and UNOP->new counterparts,
-cv->NEW_with_start disabled.
-
-";
-} elsif ( $ENV{PERL_DL_NONLAZY} and $] > 5.009 ) {
-  print "
-Warning: CPAN #28912 Perl 5.10 effectively removed B::Generate support
-by privatizing some essential libperl functions, which is fatal
-with strict linkers.
-
-However it still works if you do not set PERL_DL_NONLAZY, because those
-functions are still in libperl - unices can access unexported functions
-in shared libs - until the next porter will remove it from there also.
-I've unset PERL_DL_NONLAZY for this test.
-
-If you need PERL_DL_NONLAZY add -DDISABLE_PERL_CORE_EXPORTED to CCFLAGS.
-
-";
-}
-
-# Yet unused
-# MSWin32 should have dumpbin, GNU systems nm, others I have no idea.
-sub findexport {
-  my $sym = shift;
-  my $libperl = $Config{libperl};
-  $libperl = "$Config{archlibexp}/CORE/$Config{libperl}" unless -f $libperl;
-  return 0 unless -f $libperl;
-  if ($^O eq 'MSWin32') {
-    my $test = `dumpbin`;
-    if ($test =~ /usage: DUMPBIN/) {
-      `dumpbin /EXPORTS $libperl > perl.sym`;
-      my $found = `find "$sym" perl.sym`;
-      return $found =~ /$sym/;
-    }
-  } else {
-    my $test = `nm --help`;
-    if ($test =~ /Usage: nm/) {
-      my $found = `nm -g "$libperl" | grep $sym`;
-      return $found =~ /$sym/;
-    }
-  }
-  return 0;
-}
-
 my $obj = $Config{obj_ext};
 
 sub checkexport {
@@ -136,15 +78,13 @@ EOF
   return $ok;
 }
 
+my $broken_plat = $^O =~ /MSWin32|AIX/;
 unless ($broken_plat) {
   END { unlink "a.out", "a.exe", "test.exe", "test$obj", "test.c"; };
   $ccflags .= " -DHAVE_PAD_ALLOC"
     if checkexport("Perl_pad_alloc(aTHX_ 0, SVs_PADTMP)", "pad_alloc");
   $ccflags .= " -DHAVE_CV_CLONE"
     if checkexport("CV* cv;\nPerl_cv_clone(aTHX_ cv)", "cv_clone");
-  $ccflags .= " -DHAVE_FOLD_CONSTANTS"
-    if checkexport("OP* o;\n".($]<5.011?"Perl":"S")."_fold_constants(aTHX_ o)",
-		   "fold_constants");
   print "\n";
 } # else -DDISABLE_PERL_CORE_EXPORTED
 
@@ -159,7 +99,7 @@ WriteMakefile
     'ExtUtils::Embed'    => 0,
    },
    ABSTRACT_FROM => 'lib/B/Generate.pm',
-   AUTHOR        => 'Simon Cozens',
+   AUTHOR        => [ 'Simon Cozens', 'Reini Urban' ],
    (($^O eq 'darwin') ?
      (LDDLFLAGS     => $lddlflags) : ()),
    CCFLAGS        => $ccflags,
@@ -168,7 +108,6 @@ WriteMakefile
      {
       resources =>
       {
-       MailingList => 'mailto:"600 subscribers" <perl5-porters@perl.org>',
        repository  => 'http://github.com/rurban/b-generate',
        license     => 'http://dev.perl.org/licenses/',
       },

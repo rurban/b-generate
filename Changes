@@ -1,5 +1,11 @@
 Revision history for the Perl extension B::Generate.
 
+1.45 - (Reini Urban)
+   - Remove fold_constants in $op->convert, BINOP->new and UNOP->new  at all.
+     Inproper usage can lead to
+     leaks, which p5p hates. constants have to be folded beforehand, just
+     manually.
+
 1.44 - (Reini Urban)
    - Generate.xs: global-buffer-overflow detected by AddressSanitizer:
      specialsv_list[7] for 0-6

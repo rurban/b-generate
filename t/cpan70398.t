@@ -1,7 +1,10 @@
 # -*-perl -*- 
 # B::Generate <1.41 broke Concise dumping of const ops on threaded perls
 # https://rt.cpan.org/Public/Bug/Display.html?id=70398
-use Test::More tests => 3;
+use Test::More
+  $] < 5.007
+   ? (skip_all => "no 5.6.2 Concise testing")
+   : (tests => 3);
 
 sub const_iv {
   my $s = shift;

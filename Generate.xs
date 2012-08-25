@@ -43,6 +43,16 @@
 # define CHECK_CUSTOM_OPS
 #endif
 
+#ifndef PadARRAY
+# if PERL_VERSION < 8 || (PERL_VERSION == 8 && !PERL_SUBVERSION)
+typedef AV PADLIST;
+typedef AV PAD;
+# endif
+# define PadlistARRAY(pl)	((PAD **)AvARRAY(pl))
+# define PadlistNAMES(pl)	(*PadlistARRAY(pl))
+# define PadARRAY		AvARRAY
+#endif
+
 static const char* const svclassnames[] = {
     "B::NULL",
 #if PERL_VERSION >= 9
@@ -137,8 +147,8 @@ HV* root_cache;
 	tmp_pad           = PL_curpad; \
 	tmp_op            = PL_op; \
 	if ( my_curr_cv) { \
-		PL_comppad       = (AV*) AvARRAY(CvPADLIST(my_curr_cv))[1]; \
-		PL_comppad_name  = (AV*) AvARRAY(CvPADLIST(my_curr_cv))[0]; \
+		PL_comppad       = PadlistARRAY(CvPADLIST(my_curr_cv))[1]; \
+		PL_comppad_name  = PadlistNAMES(CvPADLIST(my_curr_cv)); \
 		PL_padix         = AvFILLp(PL_comppad_name); \
 		PL_pad_reset_pending = 0; \
 	} \
@@ -159,8 +169,8 @@ void
 set_active_sub(SV *sv)
 {
     dTHX;
-    AV* padlist;
-    SV** svp;
+    PADLIST* padlist;
+    PAD** svp;
     /* sv_dump(SvRV(sv)); */
     padlist = CvPADLIST(SvRV(sv));
     if (!padlist) {
@@ -169,8 +179,8 @@ set_active_sub(SV *sv)
         sv_dump((SV*)SvRV(sv));
         croak("set_active_sub: !CvPADLIST(SvRV(sv))");
     }
-    svp = AvARRAY(padlist);
-    my_current_pad = AvARRAY((AV*)svp[1]); /* => GEN_PAD */
+    svp = PadlistARRAY(padlist);
+    my_current_pad = PadARRAY(svp[1]); /* => GEN_PAD */
 }
 
 static SV *
@@ -696,7 +706,7 @@ OP_targ(o, ...)
 
         /* begin highly experimental */	/* XXX coverage 0 */
         if (items > 1 && (SvIV(ST(1)) > 1000 || SvIV(ST(1)) & 0x80000000)) {
-            AV *padlist = INT2PTR(AV*,SvIV(ST(1)));
+            PADLIST *padlist = INT2PTR(PADLIST*,SvIV(ST(1)));
 
             I32 old_padix             = PL_padix;
             I32 old_comppad_name_fill = PL_comppad_name_fill;
@@ -710,8 +720,8 @@ OP_targ(o, ...)
 
             /* PTR2UV */
 
-            PL_comppad_name      = (AV*)(*av_fetch(padlist, 0, FALSE));
-            PL_comppad           = (AV*)(*av_fetch(padlist, 1, FALSE));
+            PL_comppad_name      = PadlistNAMES(padlist);
+            PL_comppad           = PadlistARRAY(padlist)[1];
             PL_curpad            = AvARRAY(PL_comppad);
 
             PL_padix             = AvFILLp(PL_comppad_name);

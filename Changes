@@ -1,5 +1,8 @@
 Revision history for the Perl extension B::Generate.
 
+1.46 - (Reini Urban)
+   - Support the 5.17.4 AV -> PADLIST change. (sprout)
+
 1.45 - (Reini Urban)
    - Remove fold_constants in $op->convert.
      Inproper usage can lead to leaks, which p5p hates. 

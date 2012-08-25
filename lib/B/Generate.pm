@@ -8,7 +8,7 @@ use B ();
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.45';
+$VERSION = '1.46';
 
 {
     # 'no warnings' does not work.
@@ -319,4 +319,5 @@ license and the GPL.
 L<B>, F<perlguts>, F<op.c>, B<perloptree> with L<B::C>
 
 =cut
+
 

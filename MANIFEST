@@ -17,4 +17,3 @@ t/op_list_bgen.t
 t/scope.t
 t/svclasses.t
 typemap
-META.yml                                 Module meta-data (added by MakeMaker)

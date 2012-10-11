@@ -1,5 +1,8 @@
 Revision history for the Perl extension B::Generate.
 
+1.47 - (Reini Urban)
+   - Support the 5.17.4 boolkeys removal. (andk)
+
 1.46 - (Reini Urban)
    - Support the 5.17.4 AV -> PADLIST change. (sprout)
 

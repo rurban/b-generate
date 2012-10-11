@@ -99,7 +99,7 @@ WriteMakefile
     'ExtUtils::Embed'    => 0,
    },
    ABSTRACT_FROM => 'lib/B/Generate.pm',
-   AUTHOR        => [ 'Simon Cozens', 'Reini Urban' ],
+   AUTHOR        => 'Simon Cozens',
    (($^O eq 'darwin') ?
      (LDDLFLAGS     => $lddlflags) : ()),
    CCFLAGS        => $ccflags,

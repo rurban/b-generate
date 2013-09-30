@@ -12,10 +12,10 @@ use Config ();
 
 sub debug_const {
   my $x = $_[0];
-  my $pad = $_[1]; # only needd threaded
-  #diag "const ",ref($x); #," (",$x->flagspv,") ",$x->privatepv;
+  my $pad = $_[1]; # only needed threaded
+  #diag "const ",ref($x); #," (",$x->flagspv,") ",$x->privatepv if $DEBUG;
   my $sv = !${$x->sv} ? $pad->[$x->targ] : $x->sv;
-  #diag "const->sv ",ref($sv);
+  #diag "const->sv ",ref($sv) if $DEBUG;
   my $val = ref($sv) eq 'B::SPECIAL' ? ["Null", "sv_undef", "sv_yes", "sv_no"]->[${$sv}]
     : (ref($sv) eq 'B::NULL' ? 'undef' : $sv->sv);
   if (!${$x->sv}) {
@@ -29,8 +29,8 @@ sub debug_const {
 CHECK
 {
     my ($x,$y,$z);
-    # $DB::single=1 if defined &DB::DB;
-    my $DEBUG = 0;
+    $DB::single=1 if defined &DB::DB;
+    my $DEBUG;
 
     # Replace add op with subtract op in main_cv
 
@@ -145,7 +145,7 @@ CHECK
 	  $x = $x->next
 	 ) {
         # $x->dump if $DEBUG;
-	next unless $x->can('sv');
+	next if (ref($x) ne 'B::SVOP' or !$x->sv->can('PV'));
 	if ($x->sv->PV and $x->sv->PV eq "bad") {
 	  diag "changed 'bad' into 'good'";
 	  $x->sv("good");
@@ -158,8 +158,6 @@ $foo->();
 
 sub foo::baz {
     my $s = "Turn lead into gold in a sub";
-    #$Config::Config{useithreads}
-    #  ? pass( "TODO ".$s ) :
     is( "lead", "gold", $s );
 }
 CHECK
@@ -171,7 +169,6 @@ CHECK
 
     diag "search for const(PV 'lead') in &foo::baz";
     if ($Config::Config{useithreads}) {
-      $DEBUG = 0;
       my $cv = svref_2object(\&foo::baz);
       my @pad = (($cv->PADLIST->ARRAY)[1]->ARRAY); # depth=1?
       $x = $cv->START;
@@ -194,9 +191,10 @@ CHECK
 	  ref($x) ne 'B::NULL';
 	  $x = $x->next
 	 ) {
+        diag ref($x) if $DEBUG;
         # $x->dump if $DEBUG;
-	next unless $x->can('sv') and $x->sv->can('PV');
-	if ($x->sv->PV eq "lead") {
+	next if (ref($x) ne 'B::SVOP' or !$x->sv->can('PV'));
+	if ($x->sv->PV and $x->sv->PV eq "lead") {
 	  diag "changed 'lead' into 'gold'";
 	  $x->sv("gold");
 	  last;

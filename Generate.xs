@@ -53,9 +53,13 @@ typedef AV PAD;
 # define PadARRAY		AvARRAY
 #endif
 
+#ifndef SvIS_FREED
+#  define SvIS_FREED(sv) ((sv)->sv_flags == SVTYPEMASK)
+#endif
+
 static const char* const svclassnames[] = {
     "B::NULL",
-#if PERL_VERSION >= 9
+#if PERL_VERSION >= 9 && PERL_VERSION < 19
     "B::BIND",
 #endif
     "B::IV",
@@ -64,6 +68,9 @@ static const char* const svclassnames[] = {
     "B::RV",
 #endif
     "B::PV",
+#if PERL_VERSION >= 19
+    "B::INVLIST",
+#endif
     "B::PVIV",
     "B::PVNV",
     "B::PVMG",
@@ -236,7 +243,7 @@ find_cv_by_root(OP* o) {
     for (sva = PL_sv_arenaroot; sva; sva = (SV*)SvANY(sva)) {
       svend = &sva[SvREFCNT(sva)];
       for (sv = sva + 1; sv < svend; ++sv) {
-        if (SvTYPE(sv) != SVTYPEMASK && SvREFCNT(sv)) {
+        if (!SvIS_FREED(sv) && SvREFCNT(sv)) {
           if (SvTYPE(sv) == SVt_PVCV &&
              CvROOT(sv) == root
              ) {

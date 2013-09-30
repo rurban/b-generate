@@ -12,6 +12,8 @@ use_ok 'B';
 # release-dependent values, which we reverify using B-Gen in 2nd test
 
 my %list_nums = (
+    149 => "5.019004",  # added kvaslice, kvhslice
+    148 => "5.017006",  # added padrange
     147 => "5.017004",  # removed boolkeys
     148 => "5.015000",  # added transr and aelemfast_lex, new ops starting with 36
     146 => "5.012000",

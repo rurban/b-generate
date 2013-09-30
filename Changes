@@ -1,5 +1,9 @@
 Revision history for the Perl extension B::Generate.
 
+1.48 - (Reini Urban)
+   - Support the 5.20 changes so far (BIND vs INVLIST)
+   - Simplify tautological (sv)->sv_flags != SVTYPEMASK to !SvIS_FREED(sv)
+
 1.47 - (Reini Urban)
    - Support the 5.17.4 boolkeys removal. (andk)
 

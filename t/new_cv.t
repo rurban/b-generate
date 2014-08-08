@@ -59,19 +59,21 @@ sub showlex {
 
 sub prepend_function_with_inc {
     my $code = shift;
-
+    #diag "\$^P = $^P";
+    my $P = $^P & ~260; # do not expect dbstate with Devel::Cover
+    my $statename = $P ? 'dbstate' : 'nextstate';
     my $whoami = B::svref_2object($code);
     isa_ok($whoami, 'B::CV');
     is($whoami->ROOT->name, 'leavesub', 'leavesub');
-    is($whoami->START->name, ($^P ? 'dbstate' : 'nextstate'), 'nextstate');
+    is($whoami->START->name, $statename, $statename);
     my $leavesub = B::UNOP->new("leavesub", $whoami->ROOT->flags, $whoami->ROOT->first);
     is($leavesub->name, 'leavesub', 'leavesub');
     my $nextstate = $whoami->START;
-    is($nextstate->name, ($^P ? 'dbstate' : 'nextstate'), 'nextstate');
+    is($nextstate->name, $statename, $statename);
 
     my $inc_a = B::svref_2object(\&inc_a);
     my $inc_a_entry = $inc_a->START;
-    if ($] >= 5.010 and ($^P or $DEBUG)) {
+    if ($] >= 5.010 and ($P or $DEBUG)) {
         print "# code=",$whoami,"\n";
         print "# inc_a=", $inc_a, ", inc_a->OUTSIDE->PADLIST=",$inc_a->OUTSIDE->PADLIST,"\n";
         showlex("inc_a->OUTSIDE", $inc_a->OUTSIDE->PADLIST->ARRAY) if $DEBUG;
@@ -81,7 +83,7 @@ sub prepend_function_with_inc {
         print "# a=",B::svref_2object(\$a),"\n";
         showlex("inc_a", $inc_a->PADLIST->ARRAY) if $DEBUG;
     }
-    is($inc_a_entry->name, ($^P ? 'dbstate' : 'nextstate'), 'nextstate');
+    is($inc_a_entry->name, $statename, $statename);
     my $padsv = $inc_a->START->next;
 
     my $inc = $padsv->next;

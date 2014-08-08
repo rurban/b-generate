@@ -143,12 +143,21 @@ sub depend {
 README : \$(VERSION_FROM)
 	pod2text \$(VERSION_FROM) > README
 
+README.md : \$(VERSION_FROM)
+	pod2markdown \$(VERSION_FROM) > \$@
+
 release : dist
-	git commit -a -m\"release \$(VERSION)\"
+	echo git commit -a -m\"release \$(VERSION)\"
 	git tag \$(VERSION)
 	cpan-upload \$(DISTVNAME).tar\$(SUFFIX)
 	git push
 	git push --tags
+
+test_cover :: pure_all
+	\$(RM_RF) cover_db
+	\$(PERLRUNINST) -S cover -test
+test_coveralls :: pure_all
+	\$(PERLRUNINST) -S cover -test -report coveralls
 
 gcov : \$(BASEEXT).c.gcov \$(BASEEXT).gcov cover_db/\$(BASEEXT)-xs.html
 

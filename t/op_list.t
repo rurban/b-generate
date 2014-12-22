@@ -12,6 +12,7 @@ use_ok 'B';
 # release-dependent values, which we reverify using B-Gen in 2nd test
 
 my %list_nums = (
+    150 => "5.021007",  # added multideref
     149 => "5.019004",  # added kvaslice, kvhslice
     148 => "5.017006",  # added padrange
     147 => "5.017004",  # removed boolkeys

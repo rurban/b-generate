@@ -51,6 +51,7 @@ typedef AV PAD;
 # define PadlistARRAY(pl)	((PAD **)AvARRAY(pl))
 # define PadlistNAMES(pl)	(*PadlistARRAY(pl))
 # define PadARRAY		AvARRAY
+# define PadnamelistMAX		AvFILLp
 #endif
 
 #ifndef SvIS_FREED
@@ -156,7 +157,7 @@ HV* root_cache;
 	if ( my_curr_cv) { \
 		PL_comppad       = PadlistARRAY(CvPADLIST(my_curr_cv))[1]; \
 		PL_comppad_name  = PadlistNAMES(CvPADLIST(my_curr_cv)); \
-		PL_padix         = AvFILLp(PL_comppad_name); \
+		PL_padix         = PadnamelistMAX(PL_comppad_name); \
 		PL_pad_reset_pending = 0; \
 	} \
 	PL_curpad = AvARRAY(PL_comppad); \
@@ -731,7 +732,7 @@ OP_targ(o, ...)
             PL_comppad           = PadlistARRAY(padlist)[1];
             PL_curpad            = AvARRAY(PL_comppad);
 
-            PL_padix             = AvFILLp(PL_comppad_name);
+            PL_padix             = PadnamelistMAX(PL_comppad_name);
             PL_pad_reset_pending = 0;
             /* <medwards> PL_comppad_name_fill appears irrelevant as long as you
 	       stick to pad_alloc, pad_swipe, pad_free.

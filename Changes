@@ -1,5 +1,8 @@
 Revision history for the Perl extension B::Generate.
 
+1.50 - 2014-12-24 (Reini Urban)
+   - Fixed for 5.21.7 multideref by Father Chrysostomos [cpan#101070]
+
 1.49 - Fri Aug 8 2014 (Reini Urban)
    - Fix t/new_cv.t with Devel::Cover
    - Add test_cover target

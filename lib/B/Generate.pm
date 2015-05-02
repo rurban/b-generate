@@ -8,7 +8,7 @@ use B ();
 require DynaLoader;
 use vars qw( @ISA $VERSION );
 @ISA = qw(DynaLoader);
-$VERSION = '1.50';
+$VERSION = '1.51';
 
 {
     # 'no warnings' does not work.
@@ -162,8 +162,6 @@ not documented here. This is deliberate, rather than just through
 laziness. You are expected to have read the Perl and XS sources to this
 module before attempting to do anything with it.
 
-Patches welcome.
-
 =head1 DESCRIPTION
 
 The C<B> module allows you to examine the Perl op tree at
@@ -262,7 +260,7 @@ together yourself.
 
 Create a surrounding scope for the b_op, "parenthesize" it.
 
-Creates on OPf_PARENS (alerady parenthesized by the parser) a
+Creates on OPf_PARENS (already parenthesized by the parser) a
 full lineseq, enter, b_op, leave sequence.
 
 Otherwise just scope, b_op.
@@ -294,13 +292,14 @@ None.
 =head1 AUTHOR
 
 Simon Cozens, C<simon@cpan.org>
+Reini Urban, C<rurban@cpan.org>
 
 =head1 MAINTAINERS
 
-Currently maintained by Reini Urban.
+Maintained by Reini Urban.
 
 This is just a list of people who have submitted patches to the
-module. You may also try contacting perl5-porters.
+module:
 
 Josh Jore, Michael Schwern, Jim Cromie, Scott Walters, Reini Urban,
 Anton Berezin, Dmitry Karasik.

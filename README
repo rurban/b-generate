@@ -31,8 +31,6 @@ WARNING
     You are expected to have read the Perl and XS sources to this module
     before attempting to do anything with it.
 
-    Patches welcome.
-
 DESCRIPTION
     The "B" module allows you to examine the Perl op tree at runtime, in
     Perl space; it's the basis of the Perl compiler. But what it doesn't let
@@ -121,7 +119,7 @@ DESCRIPTION
     $b_op->scope
        Create a surrounding scope for the b_op, "parenthesize" it.
 
-       Creates on OPf_PARENS (alerady parenthesized by the parser) a full
+       Creates on OPf_PARENS (already parenthesized by the parser) a full
        lineseq, enter, b_op, leave sequence.
 
        Otherwise just scope, b_op.
@@ -146,13 +144,12 @@ DESCRIPTION
     None.
 
 AUTHOR
-    Simon Cozens, "simon@cpan.org"
+    Simon Cozens, "simon@cpan.org" Reini Urban, "rurban@cpan.org"
 
 MAINTAINERS
-    Currently maintained by Reini Urban.
+    Maintained by Reini Urban.
 
-    This is just a list of people who have submitted patches to the module.
-    You may also try contacting perl5-porters.
+    This is just a list of people who have submitted patches to the module:
 
     Josh Jore, Michael Schwern, Jim Cromie, Scott Walters, Reini Urban,
     Anton Berezin, Dmitry Karasik.

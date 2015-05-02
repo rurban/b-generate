@@ -57,6 +57,14 @@ typedef AV PAD;
 #ifndef SvIS_FREED
 #  define SvIS_FREED(sv) ((sv)->sv_flags == SVTYPEMASK)
 #endif
+#ifndef OpSIBLING
+#  define OpSIBLING(o)        (o)->op_sibling
+#  define OpSIBLING_set(o, v) (o)->op_sibling = (v)
+#else
+#  ifndef OpSIBLING_set
+#    define OpSIBLING_set(o, v) OpMORESIB_set((o), (v))
+#  endif
+#endif
 
 static const char* const svclassnames[] = {
     "B::NULL",
@@ -131,7 +139,12 @@ static int walkoptree_debug = 0; /* Flag for walkoptree debug hook */
 
 static SV *specialsv_list[7];    /* 0-6 */
 
-AV * tmp_comppad, * tmp_comppad_name;
+AV * tmp_comppad;
+#ifdef PadARRAY
+PADNAMELIST * tmp_comppad_name;
+#else
+AV * tmp_comppad_name;
+#endif
 I32 tmp_padix, tmp_reset_pending;
 OP * tmp_op;
 
@@ -683,10 +696,25 @@ OP_sibling(o, ...)
         B::OP           o
     CODE:
         if (items > 1)
-            o->op_sibling = SVtoO(ST(1));
-        RETVAL = o->op_sibling;
+          OpSIBLING_set(o, SVtoO(ST(1)));
+        RETVAL = OpSIBLING(o);
     OUTPUT:
         RETVAL
+
+#ifdef PERL_OP_PARENT
+
+# XXX coverage 0
+B::OP
+OP_sibparent(o, ...)
+        B::OP           o
+    CODE:
+        if (items > 1)
+            OpLASTSIB_set(o, SVtoO(ST(1)));
+        RETVAL = o->op_sibparent;
+    OUTPUT:
+        RETVAL
+
+#endif
 
 # XXX coverage 0
 IV
@@ -724,8 +752,11 @@ OP_targ(o, ...)
             I32 old_pad_reset_pending = PL_pad_reset_pending;
             SV **old_curpad            = PL_curpad;
             AV *old_comppad           = PL_comppad;
+#ifdef PadARRAY
+            PADNAMELIST *old_comppad_name = PL_comppad_name;
+#else
             AV *old_comppad_name      = PL_comppad_name;
-
+#endif
             /* PTR2UV */
 
             PL_comppad_name      = PadlistNAMES(padlist);
@@ -1043,7 +1074,7 @@ BINOP_new(class, type, flags, sv_first, sv_last)
         {
         I32 typenum = op_name_to_num(type);
 
-	SAVE_VARS;
+        SAVE_VARS;
 
         if (typenum == OP_SASSIGN || typenum == OP_AASSIGN)
             o = newASSIGNOP(flags, first, 0, last);

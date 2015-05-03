@@ -1,5 +1,8 @@
 Revision history for the Perl extension B::Generate.
 
+1.52 - 2015-05-02 (Reini Urban)
+   - Fix 1.51 regression for older perls <5.18
+
 1.51 - 2015-05-02 (Reini Urban)
    - Fixes for 5.21.22: op->sibling, added op->sibparent for -DPERL_OP_PARENT.
    - Weaker op_list test, to match the number of ops. Also add op_signature variant.

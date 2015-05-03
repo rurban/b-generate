@@ -44,6 +44,7 @@
 #endif
 
 #ifndef PadARRAY
+#undef HAVE_PADNAMELIST
 # if PERL_VERSION < 8 || (PERL_VERSION == 8 && !PERL_SUBVERSION)
 typedef AV PADLIST;
 typedef AV PAD;
@@ -52,6 +53,8 @@ typedef AV PAD;
 # define PadlistNAMES(pl)	(*PadlistARRAY(pl))
 # define PadARRAY		AvARRAY
 # define PadnamelistMAX		AvFILLp
+#else
+#define HAVE_PADNAMELIST
 #endif
 
 #ifndef SvIS_FREED
@@ -140,7 +143,7 @@ static int walkoptree_debug = 0; /* Flag for walkoptree debug hook */
 static SV *specialsv_list[7];    /* 0-6 */
 
 AV * tmp_comppad;
-#ifdef PadARRAY
+#ifdef HAVE_PADNAMELIST
 PADNAMELIST * tmp_comppad_name;
 #else
 AV * tmp_comppad_name;
@@ -752,7 +755,7 @@ OP_targ(o, ...)
             I32 old_pad_reset_pending = PL_pad_reset_pending;
             SV **old_curpad            = PL_curpad;
             AV *old_comppad           = PL_comppad;
-#ifdef PadARRAY
+#ifdef HAVE_PADNAMELIST
             PADNAMELIST *old_comppad_name = PL_comppad_name;
 #else
             AV *old_comppad_name      = PL_comppad_name;

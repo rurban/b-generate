@@ -1,5 +1,9 @@
 Revision history for the Perl extension B::Generate.
 
+1.53 - 2015-05-04 (Reini Urban)
+   - Fixes for perl>5.18 without exported pad_alloc (HAVE_PAD_ALLOC)
+     i.e. MSWin32 or AIX. [CPAN #104208]
+
 1.52 - 2015-05-02 (Reini Urban)
    - Fix 1.51 regression for older perls <5.18
 

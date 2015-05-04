@@ -51,8 +51,9 @@ typedef AV PAD;
 # endif
 # define PadlistARRAY(pl)	((PAD **)AvARRAY(pl))
 # define PadlistNAMES(pl)	(*PadlistARRAY(pl))
-# define PadARRAY		AvARRAY
+# define PadARRAY			AvARRAY
 # define PadnamelistMAX		AvFILLp
+# define PadnamelistARRAY	AvARRAY
 #else
 #define HAVE_PADNAMELIST
 #endif
@@ -783,8 +784,21 @@ OP_targ(o, ...)
                has no name and no active value. */
             {
                 SV *sv;
-                SV * const * const names = AvARRAY(PL_comppad_name);
-                const SSize_t names_fill = AvFILLp(PL_comppad_name);
+#  if PERL_VERSION > 18
+                PADNAME * const * const names = PadnamelistARRAY(PL_comppad_name);
+                const SSize_t      names_fill = PadnamelistMAX(PL_comppad_name);
+                for (;;) {
+                    PADNAME *pn;
+                    if (++PL_padix <= names_fill &&
+                        (pn = names[PL_padix]) && PadnamePV(pn))
+                        continue;
+                    sv = *av_fetch(PL_comppad, PL_padix, TRUE);
+                    if (!(SvFLAGS(sv) & SVs_PADTMP))
+                        break;
+                }
+#  else
+                SV * const * const names = PadnamelistARRAY(PL_comppad_name);
+                const SSize_t names_fill = PadnamelistMAX(PL_comppad_name);
                 for (;;) {
                     if (++PL_padix <= names_fill &&
                         (sv = names[PL_padix]) && sv != &PL_sv_undef)
@@ -794,6 +808,7 @@ OP_targ(o, ...)
                         !IS_PADGV(sv) && !IS_PADCONST(sv))
                         break;
                 }
+#  endif
                 o->op_targ = PL_padix;
                 SvFLAGS(sv) |= SVs_PADTMP;
             }

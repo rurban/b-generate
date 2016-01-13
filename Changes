@@ -1,5 +1,8 @@
 Revision history for the Perl extension B::Generate.
 
+1.54 - 2016-05-26 (Reini Urban)
+   - Fixes for perl5.22 and 5.24: OP_PARENT, METHOP, UNOP_AUX
+
 1.53 - 2015-05-04 (Reini Urban)
    - Fixes for perl>5.18 without exported pad_alloc (HAVE_PAD_ALLOC)
      i.e. MSWin32 or AIX. [CPAN #104208]

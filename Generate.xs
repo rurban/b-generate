@@ -62,8 +62,13 @@ typedef AV PAD;
 #  define SvIS_FREED(sv) ((sv)->sv_flags == SVTYPEMASK)
 #endif
 #ifndef OpSIBLING
+# ifdef PERL_OP_PARENT
+#  define OpSIBLING(o)		  (0 + (o)->op_moresib ? (o)->op_sibparent : NULL)
+#  define OpSIBLING_set(o, v) ((o)->op_moresib ? (o)->op_sibparent = (v) : NULL)
+# else
 #  define OpSIBLING(o)        (o)->op_sibling
 #  define OpSIBLING_set(o, v) (o)->op_sibling = (v)
+# endif
 #else
 #  ifndef OpSIBLING_set
 #    define OpSIBLING_set(o, v) OpMORESIB_set((o), (v))
@@ -120,7 +125,9 @@ typedef enum {
     OPc_PVOP,   /* 9 */
     OPc_CVOP,   /* 10 */
     OPc_LOOP,   /* 11 */
-    OPc_COP     /* 12 */
+    OPc_COP,     /* 12 */
+    OPc_METHOP, /* 13 */
+    OPc_UNOP_AUX /* 14 */
 } opclass;
 
 static char *opclassnames[] = {
@@ -136,7 +143,9 @@ static char *opclassnames[] = {
     "B::PVOP",
     "B::CVOP",
     "B::LOOP",
-    "B::COP"
+    "B::COP",
+    "B::METHOOP",
+    "B::UNOP_AUX"
 };
 
 static int walkoptree_debug = 0; /* Flag for walkoptree debug hook */
@@ -467,6 +476,14 @@ cc_opclass(pTHX_ const OP *o)
     case OA_COP:
 	return OPc_COP;
 
+#if PERL_VERSION >= 22
+    case OA_METHOP:
+	return OPc_METHOP;
+
+    case OA_UNOP_AUX:
+	return OPc_UNOP_AUX;
+#endif
+
     case OA_BASEOP_OR_UNOP:
 	/*
 	 * UNI(OP_foo) in toke.c returns token UNI or FUNC1 depending on
@@ -511,7 +528,7 @@ cc_opclass(pTHX_ const OP *o)
 	    return OPc_PVOP;
     }
     warn("can't determine class of operator %s, assuming BASEOP\n",
-	 OP_NAME(o));
+         OP_NAME(o));
     return OPc_BASEOP;
 }
 
@@ -532,7 +549,7 @@ SVtoO(SV* sv)
     else {
         return 0;
     }
-        croak("Argument is not a reference");
+    croak("Argument is not a reference");
     return 0; /* Not reached */
 }
 
@@ -595,6 +612,11 @@ typedef PADOP   *B__PADOP;
 typedef PVOP    *B__PVOP;
 typedef LOOP    *B__LOOP;
 typedef COP     *B__COP;
+#if PERL_VERSION >= 22
+typedef METHOP   *B__METHOP;
+typedef UNOP_AUX *B__UNOP_AUX;
+typedef UNOP_AUX_item *B__UNOP_AUX_item;
+#endif
 
 typedef SV      *B__SV;
 typedef SV      *B__IV;
@@ -1703,6 +1725,167 @@ COP_new(class, flags, name, sv_first)
         ST(0) = sv_newmortal();
         sv_setiv(newSVrv(ST(0), "B::COP"), PTR2IV(o));
 
+#if PERL_VERSION >= 22
+
+MODULE = B::Generate    PACKAGE = B::UNOP_AUX               PREFIX = UNOP_AUX_
+
+# TODO: support list of [type, value] pairs
+# coverage
+B::UNOP_AUX_item
+UNOP_AUX_aux(o, ...)
+    B::UNOP_AUX o
+  CODE:
+	if (items > 1)
+	  o->op_aux = (UNOP_AUX_item*)SVtoO(ST(1));
+    RETVAL = o->op_aux;
+  OUTPUT:
+    RETVAL
+
+# XXX coverage 0
+void
+UNOP_AUX_new(class, type, flags, sv_first, sv_aux)
+    SV * class
+    SV * type
+    I32 flags
+    SV * sv_first
+    SV * sv_aux
+    OP *first = NO_INIT
+    UNOP_AUX_item *aux = NO_INIT
+    OP *o = NO_INIT
+    I32 typenum = NO_INIT
+  CODE:
+	I32 padflag = 0;
+	if (SvROK(sv_first)) {
+	  if (!sv_derived_from(sv_first, "B::OP"))
+		croak("Reference 'first' was not a B::OP object");
+	  else {
+		IV tmp = SvIV((SV*)SvRV(sv_first));
+		first = INT2PTR(OP*, tmp);
+	  }
+	} else if (SvTRUE(sv_first))
+	  croak("'first' argument to B::UNOP_AUX->new should be a B::OP object or a false value");
+	else
+	  first = Nullop;
+
+	if (SvROK(sv_aux)) {
+	  if (!sv_derived_from(sv_first, "B::PV"))
+		croak("Reference 'first' was not a B::PV object");
+	  else {
+		IV tmp = SvIV((SV*)SvRV(sv_aux));
+		aux = INT2PTR(UNOP_AUX_item*, tmp);
+	  }
+	} else if (SvTRUE(sv_aux))
+	  croak("'aux' argument to B::UNOP_AUX->new should be a B::PV object or a false value");
+	else
+	  aux = NULL;
+	{
+
+	  SAVE_VARS;
+	  typenum = op_name_to_num(type);
+	  {
+		COP *cop = PL_curcop;
+		PL_curcop = &PL_compiling;
+		o = newUNOP_AUX(typenum, flags, first, aux);
+		PL_curcop = cop;
+	  }
+	  CHECK_CUSTOM_OPS
+	  RESTORE_VARS;
+	}
+    ST(0) = sv_newmortal();
+    sv_setiv(newSVrv(ST(0), "B::UNOP_AUX"), PTR2IV(o));
+
+MODULE = B::Generate    PACKAGE = B::METHOP               PREFIX = METHOP_
+
+# coverage
+B::HV
+METHOP_rclass(o, ...)
+    B::METHOP o
+    SV *sv = NO_INIT
+  CODE:
+    if (items > 1) {
+#ifdef USE_ITHREADS
+      int i;
+#endif
+	  sv = (SV*)SVtoO(ST(1));
+      if (sv &&
+          (SvTYPE(sv) != SVt_PVHV
+           || !HvNAME(sv)))
+        croak("rclass argument is not a stash");
+#ifdef USE_ITHREADS
+      for (i=0;i<PL_generation;i++) {
+        if (PL_curpad[i] == sv) {
+          o->op_rclass_targ = i;
+          break;
+        }
+      }
+#else
+      o->op_rclass_sv = sv;
+#endif
+    }
+#ifdef USE_ITHREADS
+    RETVAL = (HV*)PL_curpad[o->op_rclass_targ];
+#else
+    RETVAL = (HV*)o->op_rclass_sv;
+#endif
+  OUTPUT:
+    RETVAL
+
+B::SV
+METHOP_meth_sv(o, ...)
+    B::METHOP o
+  CODE:
+	if (items > 1)
+	  o->op_u.op_meth_sv = (SV*)SVtoO(ST(1));
+    RETVAL = o->op_u.op_meth_sv;
+  OUTPUT:
+    RETVAL
+
+# XXX coverage 0
+void
+METHOP_new(class, type, flags, op_first)
+    SV * class
+    SV * type
+    I32 flags
+    SV * op_first
+    OP *first = NO_INIT
+    OP *o = NO_INIT
+    I32 typenum = NO_INIT
+  CODE:
+	I32 padflag = 0;
+	if (SvROK(op_first)) {
+	  if (!sv_derived_from(op_first, "B::OP")) {
+        if (sv_derived_from(op_first, "B::PV")) {
+          IV tmp = SvIV(SvRV(op_first));
+          first = INT2PTR(OP*, tmp);
+        }
+        else croak("Reference 'first' was not a B::OP or B::PV object");
+      }
+	  else {
+		IV tmp = SvIV(SvRV(op_first));
+		first = INT2PTR(OP*, tmp);
+	  }
+	} else if (SvTRUE(op_first))
+	  croak("'first' argument to B::METHOP->new should be a B::OP or B::PV object or a false value");
+	else
+	  first = Nullop;
+	{
+
+	  SAVE_VARS;
+	  typenum = op_name_to_num(type);
+	  {
+		COP *cop = PL_curcop;
+		PL_curcop = &PL_compiling;
+		o = newMETHOP(typenum, flags, first);
+		PL_curcop = cop;
+	  }
+	  CHECK_CUSTOM_OPS
+	  RESTORE_VARS;
+	}
+    ST(0) = sv_newmortal();
+    sv_setiv(newSVrv(ST(0), "B::METHOP"), PTR2IV(o));
+
+#endif
+
 MODULE = B::Generate  PACKAGE = B::SV  PREFIX = Sv
 
 # coverage ok
@@ -1738,13 +1921,13 @@ MODULE = B::Generate    PACKAGE = B::CV         PREFIX = CV_
 B::OP
 CV_ROOT(cv)
         B::CV   cv
-        CODE:
+  CODE:
         if (cv == PL_main_cv) {
             RETVAL = PL_main_root;
         } else {
-            RETVAL = CvROOT(cv);
+            RETVAL = CvISXSUB(cv) ? NULL : CvROOT(cv);
         }
-        OUTPUT:
+  OUTPUT:
         RETVAL
 
 # XXX coverage 0

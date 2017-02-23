@@ -144,7 +144,7 @@ static char *opclassnames[] = {
     "B::CVOP",
     "B::LOOP",
     "B::COP",
-    "B::METHOOP",
+    "B::METHOP",
     "B::UNOP_AUX"
 };
 

@@ -1,5 +1,8 @@
 Revision history for the Perl extension B::Generate.
 
+1.55 - 2017-02-23 (Reini Urban)
+   - Fixed typo for METHOOP [CPAN #120343] by Igor Yu. Vlasenko
+
 1.54 - 2016-05-26 (Reini Urban)
    - Fixes for perl5.22 and 5.24: OP_PARENT, METHOP, UNOP_AUX
 

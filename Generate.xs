@@ -748,6 +748,13 @@ OP_sibparent(o, ...)
 #endif
 
 # XXX coverage 0
+void
+OP_refcnt_dec(o)
+        B::OP        o
+    CODE:
+	OpREFCNT_dec(o)
+
+# XXX coverage 0
 IV
 OP_ppaddr(o, ...)
         B::OP           o
